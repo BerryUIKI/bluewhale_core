@@ -307,7 +307,7 @@ Repository labels:
 
 - `phase:p0-spike` … `phase:p6-post-mvp`
 - `area:domain`, `area:persistence`, `area:sync`, `area:crypto`, `area:ui`, `area:windows`, `area:android`, `area:server`, `area:qa`, `area:docs`
-- `type:design`, `type:feature`, `type:test`, `type:bug`, `type:chore`, `type:security`
+- `type:design`, `type:feature`, `type:test`, `type:spike`, `type:bug`, `type:chore`, `type:security`
 - `gate:spike`, `gate:release`
 - `status:blocked`
 
