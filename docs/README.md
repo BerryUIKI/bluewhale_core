@@ -18,6 +18,8 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
 | Development | [setup.md](development/setup.md) | Active |
 | Development | [build-test.md](development/build-test.md) | Active |
+| Development | [dependency-policy.md](development/dependency-policy.md) | Active |
+| Development | [licensing.md](development/licensing.md) | Active |
 | Reference | [versions.md](reference/versions.md) | Active |
 | Decisions | [adr/README.md](adr/README.md) | Template and index |
 
