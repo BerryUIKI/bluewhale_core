@@ -171,10 +171,11 @@ Rules:
 
 The clients need the core crates, but the repositories are separate and must build independently.
 
-- **Development and CI consume a pinned core revision.** The clients declare core crates as git dependencies pinned to a release tag (`core-vX.Y.Z`). `scripts/set-core-rev` updates the pin and `scripts/check-core-pin` verifies it in CI.
-- **Local side-by-side work uses an untracked override.** A developer with `bluewhale_core` checked out next to `bluewhale_clients` can add a repo-local `.cargo/config.toml` (gitignored) with `[patch."https://github.com/BerryUIKI/bluewhale_core"]` entries pointing at the local crates. The override is never written to the global user configuration and CI never uses it.
-- **Until the first core tag is pushed, the client crates do not depend on the core.** The dependency is added in P1.2 after the core skeleton is pushed and tagged. This keeps the initial commits honest and buildable.
-- **Publishing to crates.io is deferred.** Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five crate names are free. A naming decision is required before the first publish (keep the names and resolve `core-crypto`, or rename all six to a `bluewhale-core-*` namespace); ADR `0003` records the decision and the migration path.
+- **Phase A (now): pinned git revision.** The clients declare the six core crates under `[workspace.dependencies]` with `git = "https://github.com/BerryUIKI/bluewhale_core"` and a full 40-hex `rev`; the annotated crate tag `vX.Y.Z` is recorded in the clients' `docs/development/core-pin.md`. `Cargo.lock` is committed.
+- **Local side-by-side work uses an untracked override.** A developer with `bluewhale_core` checked out next to `bluewhale_clients` can create a repo-local `.cargo/local-core.toml` (gitignored) with `[patch."https://github.com/BerryUIKI/bluewhale_core"]` entries pointing at the local crates. The key must match the git URL exactly; Cargo silently ignores a mismatched patch. The override is never written to the global user configuration and CI fails if it exists or is tracked.
+- **Until the first core tag is pushed, the client crates do not depend on the core.** The dependency is added in P3.1. This keeps the initial commits honest and buildable.
+- **Phase B (after an owner-approved ADR): registry pins.** Once the six crates.io names are verified and controlled, the publication decision is recorded, and the schema/protocol/export contracts are frozen at 1.0, the pins change to `version = "=X.Y.Z"` and the local patch key changes to `[patch.crates-io]` in the same change.
+- **Publishing to crates.io is deferred.** Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five crate names are free. Phase B must resolve that name (keep the names and publish `core-crypto` under a different name, or rename all six into a `bluewhale-core-*` namespace); ADR `0003` records the decision and the migration path.
 - **Compatibility is explicit.** The core records the public API version, local schema version, sync protocol version, and export schema version in `docs/reference/versions.md` (planned). A breaking change requires a migration and a release note.
 
 The server pins the protocol version, not a core crate. Protocol fixtures are copied into the server with provenance, so a client and server can be tested against the same contract.
@@ -217,11 +218,11 @@ Nightly or weekly jobs (fuzzing, benchmarks, dependency review, OpenSSF Scorecar
 
 ## 10. What exists now
 
-| Repository | State | Verified |
+| Repository | State | Local verification (2026-11-23) |
 | --- | --- | --- |
-| Core | Workspace skeleton, governance, core CI | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check` pass |
-| Clients | Workspace manifests and three placeholder crates; governance | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` pass; `pnpm install` not yet run because the applications are not present |
-| Server | Go module, package boundaries, version entry point; proprietary license | `go build ./...`, `go vet ./...`, `go test ./...` pass; `go run ./cmd/server -version` prints the build version |
+| Core | Workspace skeleton, governance, core CI | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check`, and `actionlint` passed locally; CI has not run yet |
+| Clients | Workspace manifests and three placeholder crates; governance | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, and `cargo deny check` passed locally; `pnpm install` has not been run because the applications are not present |
+| Server | Go module, package boundaries, version entry point; proprietary license | `go build ./...`, `go vet ./...`, `go test ./...`, and `actionlint` passed locally; `go run ./cmd/server -version` prints the build version |
 
 ## 11. Open decisions
 

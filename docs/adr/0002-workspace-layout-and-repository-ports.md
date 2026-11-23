@@ -13,7 +13,8 @@ R2 defines six core crates and a strict layering rule: the domain owns repositor
 - The workspace has one crate per responsibility: `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, and `core-testkit`.
 - Repository traits live in `core-domain`. `core-persistence` depends on `core-domain`; the domain never depends on persistence.
 - `core-application` depends on `core-domain` and receives repository traits, clocks, and identifier generators as injected ports. It has no database or network dependency.
-- `core-testkit` provides in-memory fakes and deterministic clocks and is never a normal dependency of a production crate.
+- `core-testkit` provides in-memory fakes and deterministic clocks. It may depend on `core-persistence` (feature `test-support`) and `core-sync` only behind test-only feature gates, and it is never a normal dependency of a production crate.
+- The outbox and sync-cursor ports live in `core-domain::repository` so `core-persistence` never depends on `core-sync`, crypto, or networking. The sync tables themselves (`outbox_operation`, `sync_cursor`, `sync_state`, `sync_conflict`) and their ports land together as schema v2 in P2.3; schema v1 contains ledger data only.
 - Dependency direction is enforced in CI by a workspace check (planned `xtask deps-check`) rather than by convention alone.
 
 ## Consequences

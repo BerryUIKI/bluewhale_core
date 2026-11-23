@@ -10,10 +10,21 @@ The core, clients, and server are separate repositories. The clients need the co
 
 ## Decision
 
-- The clients consume the core crates as git dependencies pinned to a release tag (`core-vX.Y.Z`). The pin is updated by `scripts/set-core-rev` and verified by `scripts/check-core-pin` in CI.
-- Local side-by-side development may use an untracked `.cargo/config.toml` `[patch]` override under the exact git source key (`[patch."https://github.com/BerryUIKI/bluewhale_core"]`) that points at a sibling checkout. The override is repo-local and never written to the global user configuration; CI never uses it.
-- Until the first core tag is pushed, the client crates do not depend on the core, so every commit remains buildable. The dependency is added in P1.2.
-- Publishing to crates.io is deferred until the crate names, ownership, and compatibility policy are confirmed by a follow-up ADR. Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five names are free. Before any publish, either resolve the `core-crypto` name (for example publish it under a different name) or rename all six crates into a `bluewhale-core-*` namespace and update the manifests, docs, and client pins in one change. The migration path is: keep the same crate names, add a registry dependency, and retain the git pin only for unreleased canary builds.
+**Phase A, now until an owner-approved core publication: git dependency pinned by full revision.**
+
+- The six core crates are declared once in `bluewhale_clients/Cargo.toml` under `[workspace.dependencies]`, each with `git = "https://github.com/BerryUIKI/bluewhale_core"` and a full 40-hex `rev`. The corresponding annotated tag `vX.Y.Z` is recorded in the clients' `docs/development/core-pin.md`.
+- `Cargo.lock` is committed and records the revision. Branch pins, submodules, and path dependencies in tracked manifests are prohibited.
+- Local co-development uses a repo-local, gitignored `.cargo/local-core.toml` containing `[patch."https://github.com/BerryUIKI/bluewhale_core"]` entries that point at a sibling checkout. The patch key must match the git URL exactly; Cargo silently ignores a patch whose key does not match the dependency source. The file is never written to the global user configuration, and CI fails if it exists or is tracked.
+- The six entries are added in the change that first consumes them (P3.1), not before. Until the first core tag is pushed, the client crates do not depend on the core, so every commit stays buildable.
+
+**Phase B, only after a follow-up ADR: registry dependency.**
+
+- That ADR must verify the six crates.io names are available and controlled, record the publication decision, and freeze the local schema, sync protocol, and export contract at 1.0.
+- The client entries then change to `version = "=X.Y.Z"` registry pins, the local patch key changes to `[patch.crates-io]`, and the pin scripts change in the same change. No third mechanism is introduced.
+
+Other rules:
+
+- Publishing to crates.io is deferred. Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five names are free. Phase B must resolve that name, for example by publishing it under a different name or by renaming all six crates into a `bluewhale-core-*` namespace in one change.
 - The server pins the sync protocol version and copies protocol fixtures with provenance; it does not depend on a core crate.
 
 ## Consequences

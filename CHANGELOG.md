@@ -14,7 +14,3 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 ### Changed
 
 - Repository status is pre-alpha. The Phase 0 spike is not complete and no crate is published yet.
-
-## [0.1.0] - Unreleased
-
-Initial workspace skeleton. No functional API is available.
