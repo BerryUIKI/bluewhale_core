@@ -17,6 +17,8 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Quality | [QUALITY_AND_DELIVERY.md](quality/QUALITY_AND_DELIVERY.md) | R6 approved |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
 | Development | [setup.md](development/setup.md) | Active |
+| Development | [build-test.md](development/build-test.md) | Active |
+| Reference | [versions.md](reference/versions.md) | Active |
 | Decisions | [adr/README.md](adr/README.md) | Template and index |
 
 ## Conventions
