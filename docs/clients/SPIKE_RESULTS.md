@@ -61,8 +61,9 @@ Blocked until the toolchain is installed:
 - Build artifact: `src-tauri/target/debug/bluewhale-spike-app.exe`.
 - Launch smoke test started the executable and observed a live process for five seconds; visual, IME, and screen-reader checks are still pending.
 - `cargo test --lib` failed in `openssl-sys` while building vendored OpenSSL. The shell pipeline used `tee` without `pipefail`, so the background task reported exit code 0 even though cargo failed; it was not a test pass.
-- The selected `bundled-sqlcipher-vendored-openssl` path requires a complete Perl distribution on Windows. Git's Cygwin Perl does not include `Locale::Maketext::Simple`, so OpenSSL's `Configure` aborts.
-- Next attempt: install Strawberry Perl, put it before Git's Perl on `PATH`, and rerun `cargo test --lib` with `set -o pipefail` or `${PIPESTATUS[0]}`. If SQLCipher remains blocked, record the gap and evaluate the approved OS-level-encryption fallback.
+- The selected `bundled-sqlcipher-vendored-openssl` path requires a complete Windows Perl. Git's Cygwin Perl is minimal: it lacks `Locale::Maketext::Simple` and `ExtUtils::MakeMaker`.
+- Supplying `Locale::Maketext::Simple` through a `/tmp` `PERL5LIB`, with `MSYS2_ENV_CONV_EXCL=PERL5LIB` to stop MSYS rewriting the path, let OpenSSL's `Configure` start; it then failed on `ExtUtils::MakeMaker`. Patching module-by-module is not sustainable.
+- Next attempt: use Strawberry Perl portable as the build Perl, prepend it to `PATH`, and rerun `cargo test --lib`. If SQLCipher remains blocked, record the gap and evaluate the approved OS-level-encryption fallback.
 
 ## Next actions
 
