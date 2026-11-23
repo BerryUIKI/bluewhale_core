@@ -21,7 +21,9 @@
 | Perl | Strawberry Perl 5.40.5 portable, native Windows build |
 | nmake | MSVC 14.44.35207 Hostx64/x64 |
 | Go | 1.25.5 (server work; not part of the Windows spike) |
-| Android JDK / SDK / NDK | Not installed |
+| Android JDK | Temurin 21.0.13.1+2, portable at `D:\dev\android\jdk` |
+| Android SDK | Command-line tools 22.0 at `D:\dev\android\sdk`; packages installing |
+| Android NDK | 27.2.12479018, queued with the SDK packages |
 
 ## Spike workspace
 
@@ -51,12 +53,20 @@
 
 ## Android gates
 
-Blocked until the toolchain is installed:
+Toolchain installation started on 2026-11-23:
 
-- JDK 17 or 21.
-- Android SDK platform, build-tools, and NDK.
-- Emulator and system images.
-- Rust targets `x86_64-linux-android` and `aarch64-linux-android`.
+- Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction.
+- Android command-line tools 22.0, SHA-256 verified before extraction.
+- SDK package installation queued: `platform-tools`, `platforms;android-36`, `build-tools;36.1.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
+- Rust targets: `aarch64-linux-android` is installed; `x86_64-linux-android` is being added.
+
+Gates that remain:
+
+- Tauri Android build and debug APK on an emulator.
+- TalkBack accessibility check.
+- WorkManager background sync through a Kotlin plugin.
+- BiometricPrompt/Keystore app lock.
+- Signed AAB.
 
 ## Observations
 
@@ -85,5 +95,5 @@ Blocked until the toolchain is installed:
 ## Next actions
 
 1. Run a manual NVDA/Narrator pass over the release build and record the spoken output.
-2. Install the Android toolchain and run the Android gates.
+2. Finish the Android SDK installation, create the emulator, and run the Android gates.
 3. Replace this document with final observed results and evidence links.
