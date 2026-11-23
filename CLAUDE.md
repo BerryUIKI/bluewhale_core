@@ -17,6 +17,10 @@ Rules:
 - Select and record an open-source license before publishing the repository or accepting contributions. No license has been chosen yet; do not assume one.
 - Do not introduce dependencies on a specific client UI framework or on closed-source server internals.
 
+## Development workflow
+
+Development follows trunk-based development. Keep `main` releasable, commit small focused changes directly to `main`, and avoid long-lived feature branches. Use a short-lived branch only when a change genuinely needs isolation.
+
 ## Development guidance
 
 There are no build, lint, or test commands yet. When the project skeleton lands, add to this file:
