@@ -1,6 +1,7 @@
 [package]
 name = "core-domain"
 description = "Domain model and policies: money, accounts, categories, transactions, transfers, reports, and repository traits."
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

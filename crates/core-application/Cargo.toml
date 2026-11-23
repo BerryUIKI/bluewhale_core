@@ -1,6 +1,7 @@
 [package]
 name = "core-application"
 description = "Use cases, orchestration, transaction boundaries, and validation flow."
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

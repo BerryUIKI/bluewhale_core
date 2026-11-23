@@ -1,6 +1,7 @@
 [package]
 name = "core-crypto"
 description = "Argon2id key derivation, AEAD encryption, and device key wrapping."
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

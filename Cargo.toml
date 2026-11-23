@@ -19,12 +19,12 @@ homepage = "https://github.com/BerryUIKI/bluewhale_core"
 authors = ["Bluewhale contributors"]
 
 [workspace.dependencies]
-core-domain = { version = "0.1.0", path = "crates/core-domain" }
-core-application = { version = "0.1.0", path = "crates/core-application" }
-core-persistence = { version = "0.1.0", path = "crates/core-persistence" }
-core-sync = { version = "0.1.0", path = "crates/core-sync" }
-core-crypto = { version = "0.1.0", path = "crates/core-crypto" }
-core-testkit = { version = "0.1.0", path = "crates/core-testkit" }
+core-domain = { version = "=0.1.0", path = "crates/core-domain" }
+core-application = { version = "=0.1.0", path = "crates/core-application" }
+core-persistence = { version = "=0.1.0", path = "crates/core-persistence" }
+core-sync = { version = "=0.1.0", path = "crates/core-sync" }
+core-crypto = { version = "=0.1.0", path = "crates/core-crypto" }
+core-testkit = { version = "=0.1.0", path = "crates/core-testkit" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

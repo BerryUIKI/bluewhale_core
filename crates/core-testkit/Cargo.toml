@@ -1,6 +1,7 @@
 [package]
 name = "core-testkit"
 description = "Fakes, fixtures, and deterministic clocks shared by core tests."
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

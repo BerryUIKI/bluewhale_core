@@ -1,6 +1,7 @@
 [package]
 name = "core-persistence"
 description = "SQLite schema, migrations, and rusqlite repository implementations."
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
