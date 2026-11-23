@@ -57,8 +57,8 @@ Toolchain installation started on 2026-11-23:
 
 - Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction.
 - Android command-line tools 22.0, SHA-256 verified before extraction.
-- SDK package installation queued: `platform-tools`, `platforms;android-36`, `build-tools;36.1.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
-- Rust targets: the pinned 1.97.1 toolchain currently has only the Windows host target; `x86_64-linux-android` is being added to it, and the ARM Android targets are added next. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
+- SDK package installation queued: `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. Tauri CLI 2.12.6's Android template compiles and targets API 37, so platform 37.0 is required; no API 37 Google APIs x86_64 system image is published yet, so the emulator uses the API 36 image. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
+- Rust targets: `x86_64-linux-android` is installed on the pinned 1.97.1 toolchain; `aarch64-linux-android`, `armv7-linux-androideabi`, and `i686-linux-android` are being added for release AAB builds. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
 
 Gates that remain:
 
@@ -90,6 +90,7 @@ Gates that remain:
 - The NSIS package is per-user: silent `/S` installation to `%LOCALAPPDATA%\\bluewhale-spike-app` succeeded without elevation, the installed executable reproduced all three checks (10,000 rows in 3.6 ms), and the silent uninstaller removed both the files and the uninstall entry. The MSI package is per-machine; a standard-user account cannot complete a silent installation and the attempt was cancelled.
 - OS-level keyboard input was sent through `SendKeys` after focusing the WebView document with UI Automation. Six Tab presses reached the links, the name field, Greet, and Run SQLCipher check; Enter produced the SQLCipher result. CDP key events independently produced the same focus order, and typed characters reached the name field.
 - Microsoft Pinyin was activated with Win+Space and typed at the OS level; the WebView2 input received the composed text `你好`. The first attempt stayed in the English layout and was repeated after another layout switch.
+- Tauri CLI 2.12.6's Android template pins Android Gradle Plugin 9.3.1, Gradle 9.6.1, Kotlin 2.2.10, and `compileSdk`/`targetSdk` 37. Gradle 9.6.1 supports JVM 17-26, so the installed Temurin JDK 21 is accepted. The JDK path still contains a `+` character; it is renamed to a plus-free path after the SDK installation finishes.
 - The UI Automation tree is built lazily. The first query returned 17 Pane nodes; a second query after two seconds returned 38 nodes and exposed the document content: Text, Hyperlink, Image, Edit, four named Buttons, and a named List. Screen-reader-specific speech output has not been captured automatically, so a manual NVDA/Narrator pass remains.
 
 ## Next actions
