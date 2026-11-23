@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current status
 
-This repository was empty when this file was created on 2026-11-23: no source code, package manifest, build system, tests, CI, or license. If that no longer matches the repository, update this section and replace the guidance below with the actual architecture and commands.
+This repository was empty when this file was created on 2026-11-23: no source code, package manifest, build system, tests, or CI. If that no longer matches the repository, update this section and replace the guidance below with the actual architecture and commands.
 
 ## Purpose and release boundary
 
@@ -14,7 +14,7 @@ Rules:
 
 - Do not copy source code, assets, test fixtures, or design documents from `bluewhale-ledger` without an explicit, recorded licensing decision. That repository is proprietary. In particular, its `Packages/BerryLedgerCore` Swift package is a private, Apple-oriented implementation, not a source to lift wholesale.
 - Keep this repository self-contained and buildable without closed-source components.
-- Select and record an open-source license before publishing the repository or accepting contributions. No license has been chosen yet; do not assume one.
+- The project is licensed under the Apache License, Version 2.0 (`LICENSE`). Keep the license text intact and clear any dependency-license question before adding a dependency.
 - Do not introduce dependencies on a specific client UI framework or on closed-source server internals.
 
 ## Development workflow
