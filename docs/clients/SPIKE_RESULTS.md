@@ -39,8 +39,8 @@
 | NVDA/Narrator accessibility | Pending | Not yet run |
 | Chinese IME | Pending | Not yet run |
 | Keyboard-only flow | Pending | Not yet run |
-| SQLCipher open/reopen | Pending | Not yet implemented |
-| Argon2id + AEAD E2EE round-trip | Pending | Not yet implemented |
+| SQLCipher open/reopen | Blocked | Vendored OpenSSL build failed: Git's Cygwin Perl lacks `Locale::Maketext::Simple` |
+| Argon2id + AEAD E2EE round-trip | Not run | Crate did not compile while the OpenSSL build failed |
 | 10,000-transaction list | Pending | Not yet implemented |
 | MSI/NSIS install | Pending | Not yet built |
 
@@ -60,12 +60,16 @@ Blocked until the toolchain is installed:
 - The scaffold is suitable for validation only; production project structure follows R5.
 - Build artifact: `src-tauri/target/debug/bluewhale-spike-app.exe`.
 - Launch smoke test started the executable and observed a live process for five seconds; visual, IME, and screen-reader checks are still pending.
+- `cargo test --lib` failed in `openssl-sys` while building vendored OpenSSL. The shell pipeline used `tee` without `pipefail`, so the background task reported exit code 0 even though cargo failed; it was not a test pass.
+- The selected `bundled-sqlcipher-vendored-openssl` path requires a complete Perl distribution on Windows. Git's Cygwin Perl does not include `Locale::Maketext::Simple`, so OpenSSL's `Configure` aborts.
+- Next attempt: install Strawberry Perl, put it before Git's Perl on `PATH`, and rerun `cargo test --lib` with `set -o pipefail` or `${PIPESTATUS[0]}`. If SQLCipher remains blocked, record the gap and evaluate the approved OS-level-encryption fallback.
 
 ## Next actions
 
 1. Complete the Windows debug build and launch the app.
-2. Add SQLCipher, Argon2id/AEAD, and a 10,000-row virtualized list to the spike.
-3. Run NVDA/Narrator, Chinese IME, and keyboard checks.
-4. Build the MSI/NSIS installer.
-5. Install the Android toolchain and run the Android gates.
-6. Replace this document with observed results and evidence links.
+2. Install a complete Windows Perl distribution and retry the SQLCipher build.
+3. Add SQLCipher, Argon2id/AEAD, and a 10,000-row virtualized list to the spike.
+4. Run NVDA/Narrator, Chinese IME, and keyboard checks.
+5. Build the MSI/NSIS installer.
+6. Install the Android toolchain and run the Android gates.
+7. Replace this document with observed results and evidence links.
