@@ -16,6 +16,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Clients | [SPIKE_RESULTS.md](clients/SPIKE_RESULTS.md) | In progress |
 | Quality | [QUALITY_AND_DELIVERY.md](quality/QUALITY_AND_DELIVERY.md) | R6 approved |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
+| Development | [setup.md](development/setup.md) | Active |
 | Decisions | [adr/README.md](adr/README.md) | Template and index |
 
 ## Conventions
