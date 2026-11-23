@@ -79,9 +79,16 @@ Critical path: **P0 → P1 → P2 → P3 → P4 → P5**. P6 is not committed an
 
 ## 4. Phase 1 — Core foundation
 
-**Goal:** a tested Rust core and local database with no UI or network dependency.
+**Goal:** a tested Rust core and local database with no UI or network dependency, using the private Apple implementation as the behavioral reference and reusing approved logic where the P1.0 assessment permits.
 
 ### Steps
+
+**P1.0 Reuse assessment (pre-step)**
+
+- Inventory the private Apple `BerryLedgerCore` domain types, algorithms, invariants, and test vectors against the approved R3 model.
+- Decide per module whether to port logic to Rust or reimplement it from the approved contracts.
+- Record the licensing and provenance decision before any direct source reuse. Do not reuse Apple-only frameworks, UI, or assets, and do not modify the Apple repository.
+- Produce porting notes and reusable test vectors.
 
 1. **P1.1 Workspace and CI**
    - Cargo workspace with `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, `core-testkit`.
@@ -337,11 +344,12 @@ Seed Phase 0 first, then Phase 1 epics:
 3. P0 Android spike gates.
 4. P0 Kotlin baseline comparison.
 5. P0 record results and lock the stack.
-6. P1 workspace and CI.
-7. P1 money and currency.
-8. P1 entities and use cases.
-9. P1 SQLite schema and migrations.
-10. P1 export.
+6. P1.0 assess reuse of the Apple `BerryLedgerCore`.
+7. P1 workspace and CI.
+8. P1 money and currency.
+9. P1 entities and use cases.
+10. P1 SQLite schema and migrations.
+11. P1 export.
 
 Each epic links to its design document and contains task checklists. Sub-issues are used where available.
 
