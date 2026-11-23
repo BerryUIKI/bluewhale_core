@@ -58,7 +58,7 @@ Toolchain installation started on 2026-11-23:
 - Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction.
 - Android command-line tools 22.0, SHA-256 verified before extraction.
 - SDK package installation queued: `platform-tools`, `platforms;android-36`, `build-tools;36.1.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
-- Rust targets: `aarch64-linux-android` is installed; `x86_64-linux-android` is being added.
+- Rust targets: the pinned 1.97.1 toolchain currently has only the Windows host target; `x86_64-linux-android` is being added to it, and the ARM Android targets are added next. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
 
 Gates that remain:
 
