@@ -60,10 +60,10 @@ Blocked until the toolchain is installed:
 - The scaffold is suitable for validation only; production project structure follows R5.
 - Build artifact: `src-tauri/target/debug/bluewhale-spike-app.exe`.
 - Launch smoke test started the executable and observed a live process for five seconds; visual, IME, and screen-reader checks are still pending.
-- `cargo test --lib` failed in `openssl-sys` while building vendored OpenSSL. The shell pipeline used `tee` without `pipefail`, so the background task reported exit code 0 even though cargo failed; it was not a test pass.
-- The selected `bundled-sqlcipher-vendored-openssl` path requires a complete Windows Perl. Git's Cygwin Perl is minimal: it lacks `Locale::Maketext::Simple` and `ExtUtils::MakeMaker`.
-- Supplying `Locale::Maketext::Simple` through a `/tmp` `PERL5LIB`, with `MSYS2_ENV_CONV_EXCL=PERL5LIB` to stop MSYS rewriting the path, let OpenSSL's `Configure` start; it then failed on `ExtUtils::MakeMaker`. Patching module-by-module is not sustainable.
-- Next attempt: use Strawberry Perl portable as the build Perl, prepend it to `PATH`, and rerun `cargo test --lib`. If SQLCipher remains blocked, record the gap and evaluate the approved OS-level-encryption fallback.
+- `cargo test --lib` failed in `openssl-sys` while building vendored OpenSSL. The shell pipeline used `tee` without `pipefail`, so an earlier background task reported exit code 0 even though cargo failed; it was not a test pass.
+- Git's Cygwin Perl is not usable for OpenSSL's `VC-WIN64A` target. Patching missing modules (`Locale::Maketext::Simple`, `ExtUtils::MakeMaker`) through a `/tmp` `PERL5LIB` let `Configure` progress, but it then rejected Cygwin Perl because it does not produce Windows-style paths: "This perl implementation doesn't produce Windows like paths".
+- Next attempt: use Strawberry Perl portable as the build Perl, prepend its `perl/bin` to `PATH`, add MSVC `nmake`, and rerun `cargo test --lib`. A 304 MB portable download is in progress and is resumed from the partial file.
+- If SQLCipher remains blocked, record the gap and evaluate the approved OS-level-encryption fallback.
 
 ## Next actions
 
