@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/BerryUIKI/bluewhale_core/security/advisories/new
+    about: Report vulnerabilities privately. Never open a public issue for a security problem.
+  - name: Documentation
+    url: https://github.com/BerryUIKI/bluewhale_core/blob/main/docs/README.md
+    about: Read the product, architecture, domain, sync, client, and quality documents.
+  - name: Contributing guide
+    url: https://github.com/BerryUIKI/bluewhale_core/blob/main/CONTRIBUTING.md
+    about: Setup, commands, commit rules, and the design-document gate.

@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose a capability or behavior change for Bluewhale core.
+title: "feat: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Behavior and schema changes need an approved design before implementation.
+        Link the relevant design document or open a design-decision issue first.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - core-domain
+        - core-application
+        - core-persistence
+        - core-sync
+        - core-crypto
+        - core-testkit
+        - workspace or tooling
+        - documentation
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What problem should this solve, for whom, and why now?
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design reference
+      description: Link the product spec, architecture, data model, sync, or client design section that covers this change.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable behavior and the tests that would prove it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - label: This changes a public API, schema, protocol, or export contract.
+        - label: This needs a migration.
+        - label: This affects accessibility or localization.
+        - label: This affects the private server contract.

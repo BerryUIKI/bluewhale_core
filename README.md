@@ -1,14 +1,42 @@
 # bluewhale_core
 
-Shared core for the Bluewhale product line.
+Shared, platform-independent core for the Bluewhale product line.
 
 ## Status
 
-Early development. This repository currently contains project documentation only; there is no source code, build system, or test suite yet. The technology stack, package layout, and public API have not been decided.
+Pre-alpha. The product, architecture, domain, sync, client, and quality reviews (R1-R6) are approved, and the Phase 0 Rust + Tauri spike is in progress. This repository contains the workspace skeleton: the crate boundaries, tooling, and governance files are in place, but the crates have no functional API yet and nothing is published.
 
-## Scope
+The Windows and Android applications live in [bluewhale_clients](https://github.com/BerryUIKI/bluewhale_clients). The sync server is a separate private repository.
 
-`bluewhale_core` is intended to hold the shared, platform-independent logic used by the Bluewhale client applications. The Windows and Android clients live in the separate `bluewhale_clients` repository.
+## Workspace
+
+| Crate | Responsibility |
+| --- | --- |
+| `core-domain` | Money, accounts, categories, transactions, transfers, reports, policies, and repository traits |
+| `core-application` | Use cases, orchestration, transaction boundaries, and validation flow |
+| `core-persistence` | SQLite/SQLCipher schema, migrations, and repository implementations |
+| `core-sync` | Operation log, sync envelopes, cursors, and conflict application |
+| `core-crypto` | Argon2id key derivation, AEAD, key wrapping, and test vectors |
+| `core-testkit` | Fakes, fixtures, and deterministic clocks for tests |
+
+The dependency direction is `core-application` and `core-persistence` toward `core-domain`, never the reverse. `core-domain` has no I/O and no client dependencies.
+
+## Documentation
+
+Start at the [documentation index](docs/README.md). The approved product and technical decisions are in [docs/product](docs/product/PRODUCT_SPEC.md), [docs/architecture](docs/architecture/ARCHITECTURE.md), [docs/domain](docs/domain/DATA_MODEL.md), [docs/sync](docs/sync/SYNC_AND_SERVER_DESIGN.md), [docs/clients](docs/clients/CLIENT_DESIGN.md), and [docs/quality](docs/quality/QUALITY_AND_DELIVERY.md).
+
+## Build and test
+
+Rust 1.97.1 is selected by `rust-toolchain.toml`.
+
+```text
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace
+cargo doc --workspace --no-deps
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup, including the native Perl and `nmake` requirement for the vendored SQLCipher/OpenSSL build on Windows.
 
 ## Licensing
 
@@ -18,4 +46,4 @@ Licensed under the [Apache License, Version 2.0](LICENSE). See [NOTICE](NOTICE) 
 
 ## Contributing
 
-Contribution guidelines and the development workflow will be added with the initial implementation. Contributions are not being accepted yet.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues are reported privately according to [SECURITY.md](SECURITY.md). Contributions are accepted under the Developer Certificate of Origin; sign off every commit with `git commit -s`.

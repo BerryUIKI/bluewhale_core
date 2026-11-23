@@ -1,0 +1,33 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/core-domain",
+  "crates/core-application",
+  "crates/core-persistence",
+  "crates/core-sync",
+  "crates/core-crypto",
+  "crates/core-testkit",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/BerryUIKI/bluewhale_core"
+homepage = "https://github.com/BerryUIKI/bluewhale_core"
+authors = ["Bluewhale contributors"]
+
+[workspace.dependencies]
+core-domain = { version = "0.1.0", path = "crates/core-domain" }
+core-application = { version = "0.1.0", path = "crates/core-application" }
+core-persistence = { version = "0.1.0", path = "crates/core-persistence" }
+core-sync = { version = "0.1.0", path = "crates/core-sync" }
+core-crypto = { version = "0.1.0", path = "crates/core-crypto" }
+core-testkit = { version = "0.1.0", path = "crates/core-testkit" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"

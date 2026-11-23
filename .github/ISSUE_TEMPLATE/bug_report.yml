@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a reproducible defect in a Bluewhale core crate.
+title: "bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include real financial data, credentials, encryption keys, recovery keys, or ciphertext.
+        Security vulnerabilities must be reported privately through the Security tab, not as issues.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The crate version, tag, or commit where the defect occurs.
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - core-domain
+        - core-application
+        - core-persistence
+        - core-sync
+        - core-crypto
+        - core-testkit
+        - workspace or tooling
+        - documentation
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A minimal reproduction using synthetic data only.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error codes and logs with all financial values and identifiers removed.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and toolchain
+      description: For example Windows 11 24H2, Rust 1.97.1, or Ubuntu 24.04.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have not included real financial data, credentials, keys, or ciphertext.
+          required: true
+        - label: This is not a security vulnerability (those are reported privately).
+          required: true

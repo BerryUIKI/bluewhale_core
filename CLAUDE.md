@@ -4,30 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current status
 
-This repository was empty when this file was created on 2026-11-23: no source code, package manifest, build system, tests, or CI. If that no longer matches the repository, update this section and replace the guidance below with the actual architecture and commands.
+Pre-alpha. The design reviews R1-R6 are approved and the Phase 0 Rust + Tauri spike is in progress. This repository now contains a Rust workspace skeleton: the crate boundaries, build configuration, governance files, and documentation exist, but the crates have no functional API and nothing is published.
 
 ## Purpose and release boundary
 
-`bluewhale_core` is the shared core for the Bluewhale product line and is intended to be open source. The Windows and Android client applications live in the sibling `bluewhale_clients` repository. `bluewhale_server` is planned to remain closed source, and `bluewhale-ledger` is a proprietary, Apple-native application.
+`bluewhale_core` is the shared, platform-independent core for the Bluewhale product line and is intended to be open source. The Windows and Android client applications live in the sibling `bluewhale_clients` repository. `bluewhale_server` is proprietary and closed source, and `bluewhale-ledger` is a proprietary, Apple-native application.
 
 Rules:
 
-- The private Apple application (`bluewhale-ledger`) is the behavioral reference for this core and is not modified by this project. Do not copy its source code, assets, test fixtures, or design documents into this public repository without an explicit, recorded licensing decision. Its `Packages/BerryLedgerCore` Swift package is a private, Apple-oriented implementation, not a source to lift wholesale.
+- The private Apple application (`bluewhale-ledger`) is the behavioral reference for this core and is not modified by this project. Do not copy its source code, assets, test fixtures, or design documents into this public repository without an explicit, recorded licensing decision.
 - Keep this repository self-contained and buildable without closed-source components.
 - The project is licensed under the Apache License, Version 2.0 (`LICENSE`), with attribution in `NOTICE` (Copyright 2026 BerryUIKI). Keep both files intact and clear any dependency-license question before adding a dependency.
 - Do not introduce dependencies on a specific client UI framework or on closed-source server internals.
 
+## Workspace layout
+
+| Path | Responsibility |
+| --- | --- |
+| `crates/core-domain` | Money, accounts, categories, transactions, transfers, reports, policies, and repository traits. No I/O. |
+| `crates/core-application` | Use cases, orchestration, transaction boundaries, and validation flow. |
+| `crates/core-persistence` | SQLite/SQLCipher schema, migrations, and repository implementations. |
+| `crates/core-sync` | Operation log, sync envelopes, cursors, and conflict application. |
+| `crates/core-crypto` | Argon2id key derivation, AEAD, key wrapping, and test vectors. |
+| `crates/core-testkit` | Fakes, fixtures, and deterministic clocks for tests. |
+
+Layering rules:
+
+- `core-domain` must not depend on any other workspace crate, on persistence, on networking, or on client code.
+- `core-application` and `core-persistence` depend on `core-domain`, never the reverse.
+- `core-persistence` implements repository traits defined in `core-domain`; it is never imported by domain or application code.
+- `core-testkit` is test-only support and must never be a normal dependency of a production crate.
+- Money is checked `Int64` minor units plus currency and scale. Never introduce floating point for money.
+
+## Commands
+
+```text
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace
+cargo test -p core-domain <test_name>          # single test by name
+cargo doc --workspace --no-deps
+cargo deny check
+```
+
+When vendored SQLCipher/OpenSSL is added, Windows builds need a native Windows Perl (for example Strawberry Perl) and `nmake` on `PATH`. The Phase 0 evidence in `docs/clients/SPIKE_RESULTS.md` records the exact setup.
+
 ## Development workflow
 
-Development follows trunk-based development. Keep `main` releasable, commit small focused changes directly to `main`, and avoid long-lived feature branches. Use a short-lived branch only when a change genuinely needs isolation.
+- Trunk-based development on `main`. Keep `main` releasable and commit small focused changes directly to `main`; use a short-lived branch only when a change genuinely needs isolation.
+- Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`).
+- Sign off every commit with `git commit -s` (Developer Certificate of Origin).
+- A behavior, schema, or protocol change updates its design document and `CHANGELOG.md` in the same change.
+- New architecture or product decisions use an ADR under `docs/adr/` after the R1-R6 review phase.
+- Never include real financial data, credentials, encryption keys, or ciphertext in commits, logs, issues, screenshots, or tests. Use synthetic fixtures.
 
-## Development guidance
+## Documentation
 
-There are no build, lint, or test commands yet. When the project skeleton lands, add to this file:
+Start at `docs/README.md`. The approved decisions are in `docs/product/PRODUCT_SPEC.md`, `docs/architecture/ARCHITECTURE.md`, `docs/domain/DATA_MODEL.md`, `docs/sync/SYNC_AND_SERVER_DESIGN.md`, `docs/clients/CLIENT_DESIGN.md`, and `docs/quality/QUALITY_AND_DELIVERY.md`. The Phase 0 evidence is in `docs/clients/SPIKE_RESULTS.md`.
 
-- The exact build, lint, test, and single-test commands.
-- The chosen language, toolchain versions, package layout, and module boundaries.
-- The public API and versioning policy, plus the supported consumer platforms.
-- How the Windows and Android clients in `bluewhale_clients` consume this package.
-
-Do not invent a stack, architecture, or command set before it is actually decided and recorded here.
+Do not present planned or unverified behavior as implemented. Record observed results with the exact command, environment, and date.

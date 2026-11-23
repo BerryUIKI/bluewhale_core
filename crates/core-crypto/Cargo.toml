@@ -1,0 +1,11 @@
+[package]
+name = "core-crypto"
+description = "Argon2id key derivation, AEAD encryption, and device key wrapping."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true

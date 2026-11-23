@@ -1,0 +1,54 @@
+name: Design decision
+description: Propose a design decision that needs review before implementation.
+title: "design: "
+labels: ["design", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for architecture, data-model, sync, crypto, or public-contract decisions.
+        Small changes already covered by an approved design document do not need a separate decision.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: The forces, constraints, and current behavior that require a decision.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Proposed decision
+      description: State the decision and the rules needed to apply it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List each alternative and why it was rejected.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and migration impact
+      description: Public API, local schema, sync protocol, export contract, and existing data.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Verification plan
+      description: The tests, fixtures, or spike evidence that would validate the decision.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have read the documentation index and the relevant design document.
+          required: true
+        - label: I have not included real financial data, credentials, keys, or ciphertext.
+          required: true
