@@ -14,7 +14,7 @@ Rules:
 
 - Do not copy source code, assets, test fixtures, or design documents from `bluewhale-ledger` without an explicit, recorded licensing decision. That repository is proprietary. In particular, its `Packages/BerryLedgerCore` Swift package is a private, Apple-oriented implementation, not a source to lift wholesale.
 - Keep this repository self-contained and buildable without closed-source components.
-- The project is licensed under the Apache License, Version 2.0 (`LICENSE`). Keep the license text intact and clear any dependency-license question before adding a dependency.
+- The project is licensed under the Apache License, Version 2.0 (`LICENSE`), with attribution in `NOTICE` (Copyright 2026 BerryUIKI). Keep both files intact and clear any dependency-license question before adding a dependency.
 - Do not introduce dependencies on a specific client UI framework or on closed-source server internals.
 
 ## Development workflow
