@@ -41,7 +41,7 @@
 | Keyboard-only flow | Pending | Not yet run |
 | SQLCipher open/reopen | Blocked | Vendored OpenSSL build failed: Git's Cygwin Perl lacks `Locale::Maketext::Simple` |
 | Argon2id + AEAD E2EE round-trip | Not run | Crate did not compile while the OpenSSL build failed |
-| 10,000-transaction list | Pending | Not yet implemented |
+| 10,000-transaction list | Passed in Chromium preview | 10,000 rows in 4.4 ms; 23 DOM rows initially, 35 after scrolling; 320,000 px scroll height. Tauri WebView2 check pending. |
 | MSI/NSIS install | Pending | Not yet built |
 
 ## Android gates
@@ -60,6 +60,7 @@ Blocked until the toolchain is installed:
 - The scaffold is suitable for validation only; production project structure follows R5.
 - Build artifact: `src-tauri/target/debug/bluewhale-spike-app.exe`.
 - Launch smoke test started the executable and observed a live process for five seconds; visual, IME, and screen-reader checks are still pending.
+- The built Vite UI was served to the in-app Chromium preview. Generating 10,000 rows took 4.4 ms; only 23 rows were in the DOM initially and 35 after scrolling to 160,000 px, with a 320,000 px scroll height. This validates the virtualization approach, not the final WebView2 runtime check.
 - `cargo test --lib` failed in `openssl-sys` while building vendored OpenSSL. The shell pipeline used `tee` without `pipefail`, so an earlier background task reported exit code 0 even though cargo failed; it was not a test pass.
 - Git's Cygwin Perl is not usable for OpenSSL's `VC-WIN64A` target. Patching missing modules (`Locale::Maketext::Simple`, `ExtUtils::MakeMaker`) through a `/tmp` `PERL5LIB` let `Configure` progress, but it then rejected Cygwin Perl because it does not produce Windows-style paths: "This perl implementation doesn't produce Windows like paths".
 - Next attempt: use Strawberry Perl portable as the build Perl, prepend its `perl/bin` to `PATH`, add MSVC `nmake`, and rerun `cargo test --lib`. A 304 MB portable download is in progress and is resumed from the partial file.
