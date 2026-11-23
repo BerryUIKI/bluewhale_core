@@ -277,6 +277,8 @@ Two projects preserve the public/private boundary:
 | **Bluewhale Open Source** | Public | `bluewhale_core`, `bluewhale_clients` | Public roadmap, community-visible progress |
 | **Bluewhale Server** | Private | `bluewhale_server` | Private server work, security and operations |
 
+Current setup: **Bluewhale Open Source** is project #4 (public); **Bluewhale Server** is project #5 (private). Phase 0 issues are seeded in `bluewhale_clients` #1–#5 and `bluewhale_core` #1.
+
 Cross-cutting sync work appears in both only with sanitized, non-sensitive titles. Never put server internals, credentials, or financial data in the public project.
 
 ### 11.3 Fields
