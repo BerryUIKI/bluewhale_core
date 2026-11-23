@@ -58,7 +58,7 @@ Toolchain installation started on 2026-11-23:
 - Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction.
 - Android command-line tools 22.0, SHA-256 verified before extraction.
 - SDK package installation queued: `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. Tauri CLI 2.12.6's Android template compiles and targets API 37, so platform 37.0 is required; no API 37 Google APIs x86_64 system image is published yet, so the emulator uses the API 36 image. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
-- Rust targets: `x86_64-linux-android` is installed on the pinned 1.97.1 toolchain; `aarch64-linux-android`, `armv7-linux-androideabi`, and `i686-linux-android` are being added for release AAB builds. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
+- Rust targets: all four Android targets (`aarch64-linux-android`, `armv7-linux-androideabi`, `i686-linux-android`, `x86_64-linux-android`) are installed on the pinned 1.97.1 toolchain. `cargo check --workspace --target aarch64-linux-android` and the `x86_64-linux-android` equivalent pass for the empty crates. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
 
 Gates that remain:
 
