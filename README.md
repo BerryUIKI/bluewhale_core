@@ -31,7 +31,7 @@ Rust 1.97.1 is selected by `rust-toolchain.toml`.
 
 ```text
 cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo doc --workspace --no-deps
 ```

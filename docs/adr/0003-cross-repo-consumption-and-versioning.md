@@ -11,9 +11,9 @@ The core, clients, and server are separate repositories. The clients need the co
 ## Decision
 
 - The clients consume the core crates as git dependencies pinned to a release tag (`core-vX.Y.Z`). The pin is updated by `scripts/set-core-rev` and verified by `scripts/check-core-pin` in CI.
-- Local side-by-side development may use an untracked `.cargo/config.toml` `[patch]` override that points at a sibling checkout of `bluewhale_core`. CI never uses the override.
+- Local side-by-side development may use an untracked `.cargo/config.toml` `[patch]` override under the exact git source key (`[patch."https://github.com/BerryUIKI/bluewhale_core"]`) that points at a sibling checkout. The override is repo-local and never written to the global user configuration; CI never uses it.
 - Until the first core tag is pushed, the client crates do not depend on the core, so every commit remains buildable. The dependency is added in P1.2.
-- Publishing to crates.io is deferred until the crate names, ownership, and compatibility policy are confirmed by a follow-up ADR. The migration path is: keep the same crate names, add a registry dependency, and retain the git pin only for unreleased canary builds.
+- Publishing to crates.io is deferred until the crate names, ownership, and compatibility policy are confirmed by a follow-up ADR. Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five names are free. Before any publish, either resolve the `core-crypto` name (for example publish it under a different name) or rename all six crates into a `bluewhale-core-*` namespace and update the manifests, docs, and client pins in one change. The migration path is: keep the same crate names, add a registry dependency, and retain the git pin only for unreleased canary builds.
 - The server pins the sync protocol version and copies protocol fixtures with provenance; it does not depend on a core crate.
 
 ## Consequences

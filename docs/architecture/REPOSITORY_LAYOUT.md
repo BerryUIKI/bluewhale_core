@@ -172,9 +172,9 @@ Rules:
 The clients need the core crates, but the repositories are separate and must build independently.
 
 - **Development and CI consume a pinned core revision.** The clients declare core crates as git dependencies pinned to a release tag (`core-vX.Y.Z`). `scripts/set-core-rev` updates the pin and `scripts/check-core-pin` verifies it in CI.
-- **Local side-by-side work uses an untracked override.** A developer with `bluewhale_core` checked out next to `bluewhale_clients` can add a `[patch]` entry in `.cargo/config.toml` (gitignored) to build against the local crates. CI never uses the override.
+- **Local side-by-side work uses an untracked override.** A developer with `bluewhale_core` checked out next to `bluewhale_clients` can add a repo-local `.cargo/config.toml` (gitignored) with `[patch."https://github.com/BerryUIKI/bluewhale_core"]` entries pointing at the local crates. The override is never written to the global user configuration and CI never uses it.
 - **Until the first core tag is pushed, the client crates do not depend on the core.** The dependency is added in P1.2 after the core skeleton is pushed and tagged. This keeps the initial commits honest and buildable.
-- **Publishing to crates.io is deferred.** The crate names (`core-domain`, and so on) and ownership must be confirmed first; ADR `0003` records the decision and the migration path.
+- **Publishing to crates.io is deferred.** Availability was checked on 2026-11-23: `core-crypto` is already taken on crates.io; the other five crate names are free. A naming decision is required before the first publish (keep the names and resolve `core-crypto`, or rename all six to a `bluewhale-core-*` namespace); ADR `0003` records the decision and the migration path.
 - **Compatibility is explicit.** The core records the public API version, local schema version, sync protocol version, and export schema version in `docs/reference/versions.md` (planned). A breaking change requires a migration and a release note.
 
 The server pins the protocol version, not a core crate. Protocol fixtures are copied into the server with provenance, so a client and server can be tested against the same contract.
@@ -228,7 +228,7 @@ Nightly or weekly jobs (fuzzing, benchmarks, dependency review, OpenSSF Scorecar
 1. **Public product name and application identifier (D9).** The layout uses the working name Bluewhale and the provisional identifier `com.berryui.bluewhale`. The identifier must be confirmed before the first signed Play release; it cannot change afterwards.
 2. **Windows ARM64.** The layout assumes x64 for v1. If ARM64 is required, MSI/NSIS targets and CI runners must be added before the first release.
 3. **UI router.** R5 does not select a router. The UI package will record the choice in an ADR when the first routes land.
-4. **Core publication timing.** Git tags come first; crates.io publication, name ownership, and the compatibility SLA are recorded in an ADR before the first client release.
+4. **Core publication timing and crate names.** Git tags come first; crates.io publication is deferred. `core-crypto` is already taken on crates.io, so the first publish requires either a name resolution or a `bluewhale-core-*` rename of all six crates. The choice and the compatibility SLA are recorded in an ADR before the first client release.
 
 ## 12. Verification
 

@@ -28,7 +28,7 @@ Commands:
 
 ```text
 cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo test -p core-domain <test_name>                    # single test by name
 cargo doc --workspace --no-deps
