@@ -10,6 +10,7 @@
 - Decision owner: project owner
 - Approval: approved by the project owner on 2026-11-23
 - Supersedes: revision 1
+- Revision note: 2026-11-23 — the private Apple implementation is the behavioral reference for the core; the Apple application is not modified. Public code remains independently implemented unless a recorded licensing decision permits source reuse.
 - Implementation gate: the Rust + Tauri spike in `CLIENT_STACK_DECISION.md` must pass its hard gates before feature implementation begins.
 
 ## 1. Goals and constraints
@@ -22,7 +23,7 @@ From R1:
 - Open-source core and clients (Apache-2.0); private server.
 - End-to-end encryption for ledger payloads.
 - Lean v1: accounts, categories, transactions and transfers, dashboard and reports, settings, multiple ledgers, export.
-- No code or design-text copying from the private Apple product.
+- The private Apple implementation is the behavioral reference; the Apple application is not modified. Public code is independently implemented unless a recorded licensing decision permits source reuse.
 
 Technical goals:
 

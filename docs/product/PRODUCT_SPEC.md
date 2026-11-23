@@ -12,6 +12,8 @@
 
 This document defines the approved product requirements for the Bluewhale cross-platform line (working name). Decisions **D1–D9** are accepted as recommended. Approval authorizes the R2 technical review, not implementation.
 
+Revision note (2026-11-23): the private Apple implementation is the primary behavioral reference for the Bluewhale core. The Apple application is not modified by this project. Public code remains independently implemented unless a separate recorded licensing decision permits source reuse.
+
 ## 1. Product boundary
 
 Bluewhale is a local-first personal finance product line for Windows and Android.
@@ -23,7 +25,7 @@ Bluewhale is a local-first personal finance product line for Windows and Android
 | `bluewhale_server` | private | proprietary | Identity, synchronization, backup |
 | `bluewhale-ledger` | private | proprietary | Apple-native reference product; outside the open-source line |
 
-The private Apple application is a reference for domain behavior only. The proposed boundary is an independent implementation: no source code, tests, assets, or design text are copied into the public repositories unless a separate recorded decision authorizes it (**D1**). This document is independently written for that reason.
+The private Apple application is the primary behavioral reference for the Bluewhale core and is not modified by this project. The public repositories are implemented for the cross-platform stack; source code, tests, assets, or design text from the private repository are not copied into them unless a separate recorded licensing decision authorizes reuse (**D1**). This document is independently written for that reason.
 
 ## 2. Product positioning
 
@@ -144,7 +146,7 @@ These are candidates for later milestones; they are not implied by any v1 contro
 
 | ID | Decision | Recommendation |
 | --- | --- | --- |
-| D1 | Relationship to the private Apple product | Independent implementation sharing domain semantics; no code or design-text copying |
+| D1 | Relationship to the private Apple product | Behavioral reference; Apple app unchanged; public implementation independent unless a recorded licensing decision permits reuse |
 | D2 | v1 feature set | Lean scope in section 4; defer planning, liabilities, specialist assets, and collaboration |
 | D3 | Server v1 role | Identity, optional sync, backup; no web access or mandatory online account |
 | D4 | Server trust model | End-to-end encryption for ledger payloads; server stores ciphertext and sync metadata |
