@@ -8,6 +8,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | --- | --- | --- |
 | Product | [PRODUCT_SPEC.md](product/PRODUCT_SPEC.md) | R1 approved |
 | Architecture | [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | R2 approved |
+| Architecture | [REPOSITORY_LAYOUT.md](architecture/REPOSITORY_LAYOUT.md) | Draft for owner review |
 | Architecture | [CLIENT_STACK_DECISION.md](architecture/CLIENT_STACK_DECISION.md) | Supporting decision record |
 | Domain | [DATA_MODEL.md](domain/DATA_MODEL.md) | R3 approved |
 | Sync and server | [SYNC_AND_SERVER_DESIGN.md](sync/SYNC_AND_SERVER_DESIGN.md) | R4 approved |
