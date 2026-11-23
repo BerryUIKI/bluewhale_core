@@ -34,8 +34,8 @@
 | --- | --- | --- |
 | Tauri 2 scaffold | Passed | React + TypeScript template generated |
 | Dependency install | Passed | `pnpm install` completed |
-| Debug build without bundle | Pending | Build running |
-| WebView2 launch | Pending | Not yet run |
+| Debug build without bundle | Passed | `pnpm tauri build --debug --no-bundle`, 3m 24s, 13,718,528-byte exe |
+| WebView2 launch | Passed | Process stayed alive for 5 seconds, then stopped by the test harness |
 | NVDA/Narrator accessibility | Pending | Not yet run |
 | Chinese IME | Pending | Not yet run |
 | Keyboard-only flow | Pending | Not yet run |
@@ -58,6 +58,8 @@ Blocked until the toolchain is installed:
 - The scaffold sets `app.security.csp` to `null`. Production must use a strict content security policy.
 - The default capability includes `core:default` and `opener:default`. Production must minimize capabilities and remove unused plugins.
 - The scaffold is suitable for validation only; production project structure follows R5.
+- Build artifact: `src-tauri/target/debug/bluewhale-spike-app.exe`.
+- Launch smoke test started the executable and observed a live process for five seconds; visual, IME, and screen-reader checks are still pending.
 
 ## Next actions
 
