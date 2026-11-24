@@ -19,6 +19,16 @@ pub struct MonthlyStatistics {
 }
 
 impl MonthlyStatistics {
+    /// Creates a statistics value from precomputed totals.
+    #[must_use]
+    pub fn new(interval: InstantInterval, income: Money, expense: Money) -> Self {
+        Self {
+            interval,
+            income,
+            expense,
+        }
+    }
+
     /// Returns the month interval.
     #[must_use]
     pub fn interval(&self) -> InstantInterval {

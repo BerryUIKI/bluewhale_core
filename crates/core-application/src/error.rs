@@ -3,9 +3,13 @@
 use std::fmt;
 
 use core_domain::{
-    AccountId, AccountValidationError, CategoryId, CategoryKind, CategoryValidationError,
-    CurrencyError, LedgerCalendarError, LedgerProfileValidationError, MoneyParsingError,
-    RepositoryError, TagId, TransactionId, TransactionKind, TransactionValidationError,
+    AccountGroupValidationError, AccountId, AccountValidationError, BalanceError, CategoryGroupId,
+    CategoryGroupValidationError, CategoryId, CategoryKind, CategoryValidationError,
+    CounterpartyValidationError, Currency, CurrencyError, ExchangeRateConversionError,
+    ExchangeRateQuoteParsingError, ExchangeRateValidationError, LedgerCalendarError,
+    LedgerProfileValidationError, LedgerValidationError, MoneyError, MoneyParsingError,
+    ReconciliationFlagValidationError, RepositoryError, TagId, TagValidationError, TransactionId,
+    TransactionKind, TransactionNotePresetValidationError, TransactionValidationError,
 };
 
 /// A failure from a use case.
@@ -25,6 +29,14 @@ pub enum ApplicationError {
     DestinationAccountNotFound(AccountId),
     /// The destination account is archived.
     DestinationAccountArchived(AccountId),
+    /// The category group does not exist.
+    CategoryGroupNotFound(CategoryGroupId),
+    /// The category group is archived.
+    CategoryGroupArchived(CategoryGroupId),
+    /// The account group does not exist.
+    AccountGroupNotFound(core_domain::AccountGroupId),
+    /// The account group is archived.
+    AccountGroupArchived(core_domain::AccountGroupId),
     /// The category does not exist.
     CategoryNotFound(CategoryId),
     /// The category is archived.
@@ -66,6 +78,18 @@ pub enum ApplicationError {
     Account(AccountValidationError),
     /// The category entity rejected the fields.
     Category(CategoryValidationError),
+    /// The category-group entity rejected the fields.
+    CategoryGroup(CategoryGroupValidationError),
+    /// The account-group entity rejected the fields.
+    AccountGroup(AccountGroupValidationError),
+    /// The tag entity rejected the fields.
+    Tag(TagValidationError),
+    /// The counterparty entity rejected the fields.
+    Counterparty(CounterpartyValidationError),
+    /// The reconciliation-flag entity rejected the fields.
+    ReconciliationFlag(ReconciliationFlagValidationError),
+    /// The note-preset entity rejected the fields.
+    NotePreset(TransactionNotePresetValidationError),
     /// The profile entity rejected the fields.
     Profile(LedgerProfileValidationError),
     /// The calendar boundary cannot be represented.
@@ -88,6 +112,25 @@ pub enum ApplicationError {
     SelectedTagNotFound(TagId),
     /// The selected counterparty does not exist in the context.
     SelectedCounterpartyNotFound(core_domain::CounterpartyId),
+    /// No exchange rate is available for the requested conversion.
+    MissingExchangeRate {
+        /// The source currency.
+        source: Currency,
+        /// The reporting currency.
+        reporting: Currency,
+    },
+    /// The exchange-rate conversion failed.
+    Conversion(ExchangeRateConversionError),
+    /// The exchange rate is invalid.
+    ExchangeRate(ExchangeRateValidationError),
+    /// The exchange-rate quote is invalid.
+    Quote(ExchangeRateQuoteParsingError),
+    /// The account balance cannot be calculated.
+    Balance(BalanceError),
+    /// The ledger invariants are violated.
+    Validation(LedgerValidationError),
+    /// A money operation failed.
+    Money(MoneyError),
     /// The repository failed.
     Repository(RepositoryError),
 }
@@ -109,6 +152,18 @@ impl fmt::Display for ApplicationError {
             }
             Self::DestinationAccountArchived(id) => {
                 write!(formatter, "destination account is archived: {id}")
+            }
+            Self::CategoryGroupNotFound(id) => {
+                write!(formatter, "category group not found: {id}")
+            }
+            Self::CategoryGroupArchived(id) => {
+                write!(formatter, "category group is archived: {id}")
+            }
+            Self::AccountGroupNotFound(id) => {
+                write!(formatter, "account group not found: {id}")
+            }
+            Self::AccountGroupArchived(id) => {
+                write!(formatter, "account group is archived: {id}")
             }
             Self::CategoryNotFound(id) => write!(formatter, "category not found: {id}"),
             Self::CategoryArchived(id) => write!(formatter, "category is archived: {id}"),
@@ -143,6 +198,12 @@ impl fmt::Display for ApplicationError {
             Self::Transaction(error) => error.fmt(formatter),
             Self::Account(error) => error.fmt(formatter),
             Self::Category(error) => error.fmt(formatter),
+            Self::CategoryGroup(error) => error.fmt(formatter),
+            Self::AccountGroup(error) => error.fmt(formatter),
+            Self::Tag(error) => error.fmt(formatter),
+            Self::Counterparty(error) => error.fmt(formatter),
+            Self::ReconciliationFlag(error) => error.fmt(formatter),
+            Self::NotePreset(error) => error.fmt(formatter),
             Self::Profile(error) => error.fmt(formatter),
             Self::Calendar(error) => error.fmt(formatter),
             Self::Currency(error) => error.fmt(formatter),
@@ -166,6 +227,18 @@ impl fmt::Display for ApplicationError {
             Self::SelectedCounterpartyNotFound(id) => {
                 write!(formatter, "selected counterparty not found: {id}")
             }
+            Self::MissingExchangeRate { source, reporting } => write!(
+                formatter,
+                "missing exchange rate from {} to {}",
+                source.code(),
+                reporting.code()
+            ),
+            Self::Conversion(error) => error.fmt(formatter),
+            Self::ExchangeRate(error) => error.fmt(formatter),
+            Self::Quote(error) => error.fmt(formatter),
+            Self::Balance(error) => error.fmt(formatter),
+            Self::Validation(error) => error.fmt(formatter),
+            Self::Money(error) => error.fmt(formatter),
             Self::Repository(error) => error.fmt(formatter),
         }
     }

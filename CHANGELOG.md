@@ -12,6 +12,8 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Exchange rates in `core-domain`: exact rational quotes, scale-aware conversion with ties away from zero, and deterministic rate selection.
 - Repository traits in `core-domain`, account balances, duplicate-opening-balance validation, and monthly statistics in the ledger time zone.
 - Use cases in `core-application`: ledger initialization, account creation with an opening balance, transaction create/update/soft-delete/list, and transaction filtering with search and deterministic ordering.
+- Management use cases for category groups, categories, tags, counterparties, account groups, and account updates.
+- Exchange-rate use cases with per-day manual revisions, historical conversion, and a dashboard that reports balances, converted net balance, monthly statistics, and daily cash flow.
 - In-memory repository fakes in `core-testkit` for use-case tests.
 - Rust workspace with the `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, and `core-testkit` crates.
 - Repository governance files: contribution guide, code of conduct, security policy, issue and pull-request templates, dependency update configuration, and editor configuration.
