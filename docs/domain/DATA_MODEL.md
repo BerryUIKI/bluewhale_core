@@ -266,19 +266,25 @@ One SQLite database per ledger, opened with:
 | `sync_cursor` | Last applied server sequence per ledger |
 | `sync_state` | Device and key metadata required for sync |
 
+**Implementation notes (schema v1, P1.6).** The conceptual names above are singular; the shipped schema uses plural table names (`settings`, `profile`, `accounts`, `account_groups`, `categories`, `category_groups`, `tags`, `counterparties`, `reconciliation_flags`, `note_presets`, `transactions`, `exchange_rates`) plus the association tables `account_tags` and `transaction_tags`. One owner per account and one counterparty per transaction are nullable foreign-key columns (`accounts.owner_id`, `transactions.counterparty_id`), not association tables, matching the approved single-owner and single-counterparty rules. The `transaction` table is named `transactions` because `transaction` is a SQL keyword. The three sync tables (`outbox_operation`, `sync_cursor`, `sync_state`) are not part of local schema v1; they land with the sync engine in P2.3 and are added by a forward migration.
+
 ### 7.2 Constraints and indexes
 
-- Unique normalized tag name per ledger.
-- Unique active tag association per owner/target pair.
-- At most one active owner per account and one active counterparty per expense/income transaction (partial unique indexes).
-- Composed monetary columns are all present or all absent; scale and currency validity checked on write.
-- Kind-specific checks reject missing transfer destination, category on a transfer, or destination amount on an expense or income.
-- Indexes: `transaction(occurred_at DESC, id)`, `transaction(account_id, occurred_at)`, `transaction(category_id)`, `transaction(deleted_at)`, `transaction(kind)`, tag association target indexes, `category(group_id, sort_order)`, `account(is_archived, sort_order)`, `exchange_rate(base_currency_code, quote_currency_code, effective_date)`.
-- Foreign keys reference stable UUID text identifiers; association tables use their own IDs and soft-deletion columns.
+Schema v1 enforces in SQL:
+
+- Association uniqueness: `account_tags` and `transaction_tags` use a composite primary key, and tag associations are hard-deleted with their owner, so there is no soft-deleted duplicate to protect against.
+- Single owner and single counterparty: nullable `owner_id` and `counterparty_id` columns make a second active association unrepresentable.
+- Composed monetary columns are all present or all absent (`CHECK` on the destination amount columns); currency scales are range-checked on write.
+- Identifier, timestamp, and boolean columns use the declared storage types, and booleans are `CHECK`ed to `0`/`1`.
+
+The remaining rules are enforced by domain validation before a repository call, not by SQL: the unique normalized tag name (normalization is computed in Rust, not stored), kind-specific transaction rules (transfer destination, no category on a transfer, no destination amount on expense or income), and value ranges that need normalizing or message-level errors. A future schema version may duplicate the cheap checks as constraints; the domain stays authoritative.
+
+Shipped indexes: `accounts(is_archived)`, `accounts(custom_group_id)`, `account_tags(tag_id)`, `categories(group_id)`, `categories(kind)`, `transactions(occurred_at)`, `transactions(account_id)`, `transactions(destination_account_id)`, `transactions(deleted_at)`, `transaction_tags(tag_id)`, and `exchange_rates(source_currency_code, reporting_currency_code, effective_at)`. Reads currently load rows and sort in Rust, so the composite ordering indexes (`transaction(occurred_at DESC, id)`, `account(is_archived, sort_order)`, `category(group_id, sort_order)`) are added when query pushdown lands, not before.
 
 ### 7.3 Migration policy
 
 - The initial schema is version 1. Migrations are forward-only, numbered, and applied transactionally.
+- Schema v1 is created by `crates/core-persistence/migrations/0001_initial.sql`, which shares one transaction with the `schema_migration` row. Because there is no earlier version to migrate from, the backup-before-migration step is not exercised yet; it is implemented with the first post-v1 migration, together with its preservation fixtures.
 - Before applying a migration, create a consistent backup copy with the SQLite backup API and verify its integrity.
 - A failed migration rolls back the transaction and preserves the original database and backup. The app never deletes, resets, or recreates a ledger to recover from migration failure.
 - Every migration ships with fixtures built from each supported prior version and tests that verify data preservation, including soft-deleted and archived records.

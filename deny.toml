@@ -15,6 +15,10 @@ allow = [
   "ISC",
   "Unicode-3.0",
   "Zlib",
+  # sqlcipher-src bundles SQLCipher (MIT), SQLite (blessing) and libtomcrypt
+  # (WTFPL); both additional licenses are permissive.
+  "blessing",
+  "WTFPL",
 ]
 confidence-threshold = 0.93
 

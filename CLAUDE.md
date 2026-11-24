@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current status
 
-Pre-alpha. The design reviews R1-R6 are approved and the Phase 0 Rust + Tauri spike is in progress. This repository now contains a Rust workspace skeleton: the crate boundaries, build configuration, governance files, and documentation exist, but the crates have no functional API and nothing is published.
+Pre-alpha. The design reviews R1-R6 are approved and the Phase 0 Rust + Tauri spike is complete, with observed Windows and Android evidence in `docs/clients/SPIKE_RESULTS.md`. Phase 1 core foundation is in progress: `core-domain`, `core-application`, `core-testkit`, and `core-persistence` have functional APIs and passing tests; `core-sync` and `core-crypto` are still skeletons. Local schema v1 is implemented in `core-persistence`. Nothing is published.
 
 ## Purpose and release boundary
 
@@ -47,7 +47,7 @@ cargo doc --workspace --no-deps
 cargo deny check
 ```
 
-When vendored SQLCipher/OpenSSL is added, Windows builds need a native Windows Perl (for example Strawberry Perl) and `nmake` on `PATH`. The Phase 0 evidence in `docs/clients/SPIKE_RESULTS.md` records the exact setup.
+Vendored SQLCipher/OpenSSL builds on Windows need a native Windows Perl (for example Strawberry Perl) and `nmake` on `PATH`; Git's Cygwin Perl is rejected. Run persistence or workspace commands from a shell that has both. The Phase 0 evidence in `docs/clients/SPIKE_RESULTS.md` and the procedure in `docs/development/setup.md` record the exact setup.
 
 ## Development workflow
 

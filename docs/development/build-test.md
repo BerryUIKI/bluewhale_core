@@ -21,11 +21,12 @@ The workspace never runs `--all-features`. Features that change the storage back
 - `test-support` enables temporary-ledger helpers used by other crates' tests.
 - `http` enables the blocking sync transport in `core-sync`.
 
-The exact feature commands are added with the features themselves in P1.6 and P2.1. Until then, the default workspace commands above are the complete set.
+The exact feature commands are added with the features themselves. P1.6 ships SQLCipher as the only storage backend; `unencrypted-sqlite` and `test-support` are not implemented yet. Until they are, the default workspace commands above are the complete set.
 
 ## Integration and migration tests
 
-- `crates/core-persistence/tests/migrations.rs` opens a fixture for every prior schema version, migrates it to the current version, and asserts that active, archived, and soft-deleted rows are preserved.
+- Schema v1 has no predecessor, so there is no prior-version fixture yet. `crates/core-persistence/tests/roundtrip.rs` covers opening a keyed database, reopening it, rejecting a wrong key, reading the recorded schema version, and round-tripping every persisted entity.
+- A migration fixture for each prior schema version is added with the first post-v1 migration, and it must assert that active, archived, and soft-deleted rows are preserved.
 - `tests/integration` (planned) exercises use cases over a real temporary SQLCipher database and runs the sync convergence and export contract tests.
 - Crypto known-answer tests live in `crates/core-crypto/tests/vectors.rs` once the vectors are recorded in P1.0.
 

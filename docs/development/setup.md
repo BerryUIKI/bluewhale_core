@@ -18,7 +18,7 @@ cargo doc --workspace --no-deps
 cargo deny check
 ```
 
-Workspace-wide `--all-features` is not used: `core-persistence` will expose mutually exclusive SQLite features, so CI runs explicit feature sets per crate instead.
+Any workspace command that builds `core-persistence` (`cargo clippy --workspace`, `cargo test --workspace`, `cargo build`) needs this environment. Commands that only touch the other crates, such as `cargo test -p core-domain`, do not.
 
 ## Windows: vendored SQLCipher and OpenSSL
 
@@ -60,7 +60,7 @@ Windows host notes:
 - Cross-compiling the vendored OpenSSL for Android needs a Unix-like Perl and `make`. Git's Cygwin Perl lacks required modules, and Strawberry Perl is rejected because it produces Windows paths. Use an MSYS2 Perl and `make`, or build Android on the Linux CI runner where the cross-compile is supported. This applies only to the SQLCipher/OpenSSL dependency, not to the rest of the Android build.
 - Keep the project path short and free of spaces; the Android Gradle build and the NDK are sensitive to long paths.
 
-The full Android procedure is recorded in `docs/clients/SPIKE_RESULTS.md` once the Phase 0 gates are complete.
+The full Android procedure is recorded in `docs/clients/SPIKE_RESULTS.md`.
 
 ### Signing an Android release
 

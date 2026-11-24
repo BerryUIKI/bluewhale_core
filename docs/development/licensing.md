@@ -16,6 +16,7 @@ The public repositories do not require per-file license headers. The root `LICEN
 ## Third-party components
 
 - Rust and JavaScript dependencies are checked against the allowlist in `deny.toml` and `cargo-deny` on every pull request.
+- `sqlcipher-src` declares `MIT AND BSD-3-Clause AND blessing AND WTFPL`: its bundled SQLCipher is MIT, SQLite is covered by the SQLite Blessing, and the bundled libtomcrypt is WTFPL. All four are permissive. The allowlist records `blessing` and `WTFPL` for this dependency, and the generated third-party notices must reproduce them.
 - The Windows and Android clients embed OpenSSL and SQLCipher. A generated third-party notices file is included in the installers and the Android about screen before the first release; this is a release gate, not an optional step.
 - Do not copy code from a dependency into this repository; depend on it instead, so its license and attribution remain intact.
 

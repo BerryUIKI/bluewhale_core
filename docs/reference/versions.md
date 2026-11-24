@@ -4,8 +4,8 @@ This table records the version identity of each public contract. A change to any
 
 | Component | Current version | Status | Source of truth |
 | --- | --- | --- | --- |
-| Public crates | `0.1.0` | Skeleton, unpublished | Workspace `Cargo.toml` |
-| Local SQLite schema | `1` | Planned for P1.6 | `core-persistence` migrations and `SCHEMA_VERSION` |
+| Public crates | `0.1.0` | Functional APIs, unpublished | Workspace `Cargo.toml` |
+| Local SQLite schema | `1` | Active since P1.6 | `core-persistence` migrations and `SCHEMA_VERSION` |
 | Sync protocol | `1` | Planned for P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
 | Export schema | `1` | Planned for P1.7 | `contracts/export/v1` |
 | HTTP API | `/v1` | Planned for P2.4 | Server OpenAPI contract |
