@@ -13,6 +13,7 @@ use jiff::tz::TimeZone;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LedgerCalendar {
     identifier: String,
+    time_zone: TimeZone,
 }
 
 /// Errors raised while validating or using a ledger calendar.
@@ -90,10 +91,11 @@ impl LedgerCalendar {
     /// Returns [`LedgerCalendarError::InvalidTimeZoneIdentifier`] when the
     /// identifier is not a known time zone.
     pub fn new(identifier: &str) -> Result<Self, LedgerCalendarError> {
-        TimeZone::get(identifier)
+        let time_zone = TimeZone::get(identifier)
             .map_err(|_| LedgerCalendarError::InvalidTimeZoneIdentifier(identifier.to_string()))?;
         Ok(Self {
             identifier: identifier.to_string(),
+            time_zone,
         })
     }
 
@@ -103,13 +105,8 @@ impl LedgerCalendar {
         &self.identifier
     }
 
-    fn time_zone(&self) -> Result<TimeZone, LedgerCalendarError> {
-        TimeZone::get(&self.identifier)
-            .map_err(|_| LedgerCalendarError::InvalidTimeZoneIdentifier(self.identifier.clone()))
-    }
-
-    fn date(&self, instant: Timestamp) -> Result<Date, LedgerCalendarError> {
-        Ok(instant.to_zoned_datetime(self.time_zone()?).date())
+    fn date(&self, instant: Timestamp) -> Date {
+        instant.to_zoned_datetime(self.time_zone.clone()).date()
     }
 
     fn midnight(
@@ -117,7 +114,7 @@ impl LedgerCalendar {
         date: Date,
         error: LedgerCalendarError,
     ) -> Result<Timestamp, LedgerCalendarError> {
-        date.to_zoned_datetime(self.time_zone()?)
+        date.to_zoned_datetime(self.time_zone.clone())
             .map(|zoned| zoned.timestamp())
             .map_err(|_| error)
     }
@@ -131,7 +128,7 @@ impl LedgerCalendar {
         &self,
         containing: Timestamp,
     ) -> Result<InstantInterval, LedgerCalendarError> {
-        let date = self.date(containing)?;
+        let date = self.date(containing);
         let first = date.first_of_month();
         let next = first_of_next_month(first)?;
         Ok(InstantInterval::new(
@@ -149,7 +146,7 @@ impl LedgerCalendar {
         &self,
         containing: Timestamp,
     ) -> Result<InstantInterval, LedgerCalendarError> {
-        let date = self.date(containing)?;
+        let date = self.date(containing);
         let first =
             Date::new(date.year(), 1, 1).map_err(|_| LedgerCalendarError::UnableToCalculateYear)?;
         let next = date
@@ -172,7 +169,7 @@ impl LedgerCalendar {
         &self,
         containing: Timestamp,
     ) -> Result<InstantInterval, LedgerCalendarError> {
-        let date = self.date(containing)?;
+        let date = self.date(containing);
         let next = date
             .tomorrow()
             .map_err(|_| LedgerCalendarError::UnableToCalculateDay)?;
@@ -194,8 +191,8 @@ impl LedgerCalendar {
         from: Timestamp,
         through: Timestamp,
     ) -> Result<InstantInterval, LedgerCalendarError> {
-        let start_date = self.date(from)?;
-        let end_date = self.date(through)?;
+        let start_date = self.date(from);
+        let end_date = self.date(through);
         let start_key = (start_date.year(), start_date.month(), start_date.day());
         let end_key = (end_date.year(), end_date.month(), end_date.day());
         if start_key > end_key {
@@ -275,6 +272,38 @@ mod tests {
         let interval = calendar.year_interval(timestamp(1_767_225_600)).unwrap();
         assert_eq!(interval.start(), timestamp(1_767_225_600));
         assert_eq!(interval.end_exclusive(), timestamp(1_798_761_600));
+    }
+
+    #[test]
+    fn december_month_interval_crosses_the_year() {
+        let calendar = LedgerCalendar::new("UTC").unwrap();
+        let instant: Timestamp = "2026-12-15T12:00:00Z".parse().unwrap();
+        let interval = calendar.month_interval(instant).unwrap();
+
+        assert_eq!(
+            interval.start(),
+            "2026-12-01T00:00:00Z".parse::<Timestamp>().unwrap()
+        );
+        assert_eq!(
+            interval.end_exclusive(),
+            "2027-01-01T00:00:00Z".parse::<Timestamp>().unwrap()
+        );
+    }
+
+    #[test]
+    fn month_interval_follows_dst_offsets() {
+        let calendar = LedgerCalendar::new("Europe/Berlin").unwrap();
+        let instant: Timestamp = "2026-03-15T12:00:00Z".parse().unwrap();
+        let interval = calendar.month_interval(instant).unwrap();
+
+        assert_eq!(
+            interval.start(),
+            "2026-02-28T23:00:00Z".parse::<Timestamp>().unwrap()
+        );
+        assert_eq!(
+            interval.end_exclusive(),
+            "2026-03-31T22:00:00Z".parse::<Timestamp>().unwrap()
+        );
     }
 
     #[test]

@@ -204,6 +204,89 @@ mod tests {
     }
 
     #[test]
+    fn unrelated_accounts_are_ignored() {
+        let destination = account(2);
+        let unrelated = account(3);
+        let transactions = vec![
+            transaction(
+                1,
+                TransactionKind::OpeningBalance,
+                10_000,
+                usd(),
+                TransactionFields::default(),
+            ),
+            transaction(
+                2,
+                TransactionKind::Expense,
+                500,
+                usd(),
+                TransactionFields {
+                    category_id: Some(CategoryId::from_uuid(Uuid::from_u128(2))),
+                    ..TransactionFields::default()
+                },
+            ),
+            transaction(
+                3,
+                TransactionKind::Transfer,
+                2_000,
+                usd(),
+                TransactionFields {
+                    destination_account_id: Some(destination),
+                    ..TransactionFields::default()
+                },
+            ),
+        ];
+
+        assert_eq!(
+            account_balance(unrelated, &usd(), &transactions)
+                .unwrap()
+                .minor_units(),
+            0
+        );
+    }
+
+    #[test]
+    fn mismatched_currency_is_reported() {
+        let policy = CurrencyScalePolicy::v1();
+        let cny = policy.currency("CNY").unwrap();
+        let income = transaction(
+            1,
+            TransactionKind::Income,
+            1_000,
+            cny,
+            TransactionFields {
+                category_id: Some(CategoryId::from_uuid(Uuid::from_u128(2))),
+                ..TransactionFields::default()
+            },
+        );
+
+        assert!(matches!(
+            account_balance(account(1), &usd(), &[income]),
+            Err(BalanceError::Money(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_ledger_transactions_are_reported() {
+        let duplicate = TransactionFields::default();
+        let transactions = vec![
+            transaction(
+                1,
+                TransactionKind::OpeningBalance,
+                1_000,
+                usd(),
+                duplicate.clone(),
+            ),
+            transaction(2, TransactionKind::OpeningBalance, 2_000, usd(), duplicate),
+        ];
+
+        assert!(matches!(
+            account_balance(account(1), &usd(), &transactions),
+            Err(BalanceError::Validation(_))
+        ));
+    }
+
+    #[test]
     fn cross_currency_transfer_uses_destination_amount() {
         let source = account(1);
         let destination = account(2);

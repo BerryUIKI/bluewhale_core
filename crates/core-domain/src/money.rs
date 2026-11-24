@@ -203,25 +203,24 @@ impl MoneyParser {
         }
 
         let allowed = currency.scale();
-        let fraction_length = u8::try_from(fraction.len())
-            .map_err(|_| MoneyParsingError::ExcessFractionalDigits { allowed })?;
-        if fraction_length > allowed {
+        if fraction.len() > usize::from(allowed) {
             match self.rounding_policy {
                 MoneyRoundingPolicy::RejectExcessFraction => {
                     return Err(MoneyParsingError::ExcessFractionalDigits { allowed });
                 }
             }
         }
+        let fraction_length = fraction.len() as u8;
 
         let whole_value = parse_digits(whole)?;
-        let factor = power_of_ten(allowed)?;
+        let factor = power_of_ten(allowed);
         let scaled_whole = whole_value
             .checked_mul(factor)
             .ok_or(MoneyParsingError::Overflow)?;
 
         let fraction_value = parse_digits(fraction)?;
         let padding = allowed - fraction_length;
-        let padding_factor = power_of_ten(padding)?;
+        let padding_factor = power_of_ten(padding);
         let scaled_fraction = fraction_value
             .checked_mul(padding_factor)
             .ok_or(MoneyParsingError::Overflow)?;
@@ -245,12 +244,21 @@ fn parse_digits(value: &str) -> Result<i64, MoneyParsingError> {
     Ok(result)
 }
 
-fn power_of_ten(exponent: u8) -> Result<i64, MoneyParsingError> {
-    let mut result: i64 = 1;
-    for _ in 0..exponent {
-        result = result.checked_mul(10).ok_or(MoneyParsingError::Overflow)?;
-    }
-    Ok(result)
+const POWERS_OF_TEN: [i64; 10] = [
+    1,
+    10,
+    100,
+    1_000,
+    10_000,
+    100_000,
+    1_000_000,
+    10_000_000,
+    100_000_000,
+    1_000_000_000,
+];
+
+fn power_of_ten(exponent: u8) -> i64 {
+    POWERS_OF_TEN[usize::from(exponent)]
 }
 
 /// Errors raised while rounding a ratio to a whole number of minor units.
@@ -292,8 +300,8 @@ pub fn nearest_minor_unit(dividend: i64, divisor: i64) -> Result<i64, MoneyRound
         return Err(MoneyRoundingError::NegativeDividend);
     }
 
-    let divisor = u64::try_from(divisor).map_err(|_| MoneyRoundingError::InvalidDivisor)?;
-    let dividend = u64::try_from(dividend).map_err(|_| MoneyRoundingError::NegativeDividend)?;
+    let divisor = divisor as u64;
+    let dividend = dividend as u64;
     let quotient = dividend / divisor;
     let remainder = dividend % divisor;
     let rounds_up = remainder.saturating_mul(2) >= divisor;
@@ -351,6 +359,26 @@ mod tests {
         assert_eq!(
             parser.parse_magnitude("1.234", &usd),
             Err(MoneyParsingError::ExcessFractionalDigits { allowed: 2 })
+        );
+    }
+
+    #[test]
+    fn parser_rejects_malformed_magnitudes() {
+        let parser = MoneyParser::default();
+        let usd = currency("USD", 2);
+
+        for text in ["", "   ", ".50", "1.2.3", "1a", "1.2x", "1,00", "+1.00"] {
+            assert!(
+                matches!(
+                    parser.parse_magnitude(text, &usd),
+                    Err(MoneyParsingError::InvalidFormat(_))
+                ),
+                "{text:?}"
+            );
+        }
+        assert_eq!(
+            parser.parse_magnitude("99999999999999999999.00", &usd),
+            Err(MoneyParsingError::Overflow)
         );
     }
 

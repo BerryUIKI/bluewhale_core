@@ -80,7 +80,7 @@ GitHub Actions, scoped by repository:
 
 | Workflow | Runner | Checks |
 | --- | --- | --- |
-| `core.yml` | Linux | Format, clippy, tests, property tests, migrations, cargo-deny, SBOM |
+| `core.yml` | Linux | Format, clippy, tests, property tests, migrations, cargo-deny, coverage gates, SBOM |
 | `ui.yml` | Linux | Lint, typecheck, unit tests, axe, production build |
 | `clients-windows.yml` | Windows | Desktop build, command tests, E2E smoke, MSI/NSIS packaging |
 | `clients-android.yml` | Linux with Android SDK/NDK | Build, unit tests, emulator instrumented tests, AAB |

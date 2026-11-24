@@ -226,6 +226,57 @@ mod tests {
     }
 
     #[test]
+    fn mismatched_currency_is_reported() {
+        let calendar = LedgerCalendar::new("UTC").unwrap();
+        let eur = CurrencyScalePolicy::v1().currency("EUR").unwrap();
+        let income = Transaction::new(
+            TransactionId::from_uuid(Uuid::from_u128(1)),
+            TransactionKind::Income,
+            Money::new(1_000, eur),
+            timestamp(1_000),
+            account(1),
+            TransactionFields {
+                category_id: Some(CategoryId::from_uuid(Uuid::from_u128(2))),
+                ..TransactionFields::default()
+            },
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            monthly_statistics(&[income], timestamp(1_000), &calendar, &usd()),
+            Err(MonthlyStatisticsError::Money(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_ledger_transactions_are_reported() {
+        let calendar = LedgerCalendar::new("UTC").unwrap();
+        let transactions = vec![
+            transaction(
+                1,
+                TransactionKind::OpeningBalance,
+                1_000,
+                timestamp(1_000),
+                TransactionFields::default(),
+            ),
+            transaction(
+                2,
+                TransactionKind::OpeningBalance,
+                2_000,
+                timestamp(1_000),
+                TransactionFields::default(),
+            ),
+        ];
+
+        assert!(matches!(
+            monthly_statistics(&transactions, timestamp(1_000), &calendar, &usd()),
+            Err(MonthlyStatisticsError::Validation(_))
+        ));
+    }
+
+    #[test]
     fn ledger_time_zone_determines_month_membership() {
         let calendar = LedgerCalendar::new("Asia/Singapore").unwrap();
         // 2026-01-31T16:30:00Z is 2026-02-01T00:30:00+08:00.

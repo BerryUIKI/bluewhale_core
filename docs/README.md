@@ -15,6 +15,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Clients | [CLIENT_DESIGN.md](clients/CLIENT_DESIGN.md) | R5 approved, conditional on Phase 0 evidence |
 | Clients | [SPIKE_RESULTS.md](clients/SPIKE_RESULTS.md) | Complete |
 | Quality | [QUALITY_AND_DELIVERY.md](quality/QUALITY_AND_DELIVERY.md) | R6 approved |
+| Quality | [COVERAGE.md](quality/COVERAGE.md) | Active |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
 | Plan | [P1.0_APPLE_REUSE_ASSESSMENT.md](plan/P1.0_APPLE_REUSE_ASSESSMENT.md) | Approved |
 | Development | [setup.md](development/setup.md) | Active |

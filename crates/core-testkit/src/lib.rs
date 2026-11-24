@@ -510,3 +510,390 @@ impl LedgerExportRepository for InMemoryLedger {
 pub fn default_account_options() -> AccountOptions {
     AccountOptions::default()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core_domain::{
+        AccountGroup, AccountOptions, AssetAccountType, CategoryGroup, CategoryKind,
+        CategoryOptions, Currency, CurrencyScalePolicy, ExactRatio, ExchangeRateId,
+        ExchangeRateSource, LedgerCalendar, LedgerProfile, LedgerProfileId, LedgerSettings,
+        LedgerSettingsId, LedgerTag, Money, ReconciliationFlagOptions,
+        ReconciliationFlagSystemKind, TagOptions, TransactionFields, TransactionKind,
+        TransactionNotePreset,
+    };
+    use jiff::Timestamp;
+    use uuid::Uuid;
+
+    fn timestamp(second: i64) -> Timestamp {
+        Timestamp::from_second(second).unwrap()
+    }
+
+    fn usd() -> Currency {
+        CurrencyScalePolicy::v1().currency("USD").unwrap()
+    }
+
+    fn settings() -> LedgerSettings {
+        LedgerSettings::new(
+            LedgerSettingsId::from_uuid(Uuid::from_u128(1)),
+            usd(),
+            1,
+            LedgerCalendar::new("UTC").unwrap(),
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+    }
+
+    fn profile() -> LedgerProfile {
+        LedgerProfile::new(
+            LedgerProfileId::from_uuid(Uuid::from_u128(2)),
+            settings().id(),
+            "Home",
+            "🏠",
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn account(archived: bool) -> Account {
+        Account::new(
+            AccountId::from_uuid(Uuid::from_u128(10)),
+            "Cash",
+            AssetAccountType::Cash,
+            usd(),
+            AccountOptions {
+                is_archived: archived,
+                ..AccountOptions::default()
+            },
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn account_group(archived: bool) -> AccountGroup {
+        AccountGroup::new(
+            AccountGroupId::from_uuid(Uuid::from_u128(20)),
+            "Wallets",
+            0,
+            archived,
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn category(archived: bool) -> Category {
+        Category::new(
+            CategoryId::from_uuid(Uuid::from_u128(30)),
+            "Food",
+            CategoryKind::Expense,
+            CategoryOptions {
+                is_archived: archived,
+                ..CategoryOptions::default()
+            },
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn category_group(archived: bool) -> CategoryGroup {
+        CategoryGroup::new(
+            CategoryGroupId::from_uuid(Uuid::from_u128(31)),
+            "Living",
+            CategoryKind::Expense,
+            0,
+            archived,
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn tag(archived: bool) -> LedgerTag {
+        LedgerTag::new(
+            TagId::from_uuid(Uuid::from_u128(40)),
+            "Travel",
+            "#112233",
+            TagOptions {
+                is_archived: archived,
+                ..TagOptions::default()
+            },
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn counterparty(archived: bool) -> Counterparty {
+        Counterparty::new(
+            CounterpartyId::from_uuid(Uuid::from_u128(50)),
+            core_domain::CounterpartyKind::Organization,
+            "Grocer",
+            0,
+            archived,
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn flag(archived: bool) -> ReconciliationFlag {
+        ReconciliationFlag::new(
+            ReconciliationFlagId::from_uuid(Uuid::from_u128(60)),
+            "Cleared",
+            "#00AA55",
+            ReconciliationFlagOptions {
+                system_kind: Some(ReconciliationFlagSystemKind::Cleared),
+                is_archived: archived,
+                ..ReconciliationFlagOptions::default()
+            },
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn preset(archived: bool) -> TransactionNotePreset {
+        TransactionNotePreset::new(
+            TransactionNotePresetId::from_uuid(Uuid::from_u128(70)),
+            "Weekly shop",
+            0,
+            archived,
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    fn transaction() -> Transaction {
+        Transaction::new(
+            TransactionId::from_uuid(Uuid::from_u128(80)),
+            TransactionKind::Expense,
+            Money::new(1_000, usd()),
+            timestamp(2_000),
+            account(false).id(),
+            TransactionFields {
+                category_id: Some(category(false).id()),
+                ..TransactionFields::default()
+            },
+            timestamp(2_000),
+            timestamp(2_000),
+        )
+        .unwrap()
+    }
+
+    fn exchange_rate(id: u128, superseded: bool) -> ExchangeRate {
+        ExchangeRate::new(
+            ExchangeRateId::from_uuid(Uuid::from_u128(id)),
+            CurrencyScalePolicy::v1().currency("CNY").unwrap(),
+            usd(),
+            ExactRatio::new(3, 20).unwrap(),
+            timestamp(1_000),
+            ExchangeRateSource::Manual,
+            superseded.then(|| timestamp(2_000)),
+            timestamp(1_000),
+            timestamp(1_000),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn settings_and_profile_round_trip() {
+        let ledger = InMemoryLedger::new();
+        assert_eq!(ledger.settings().unwrap(), None);
+        assert_eq!(ledger.profile().unwrap(), None);
+
+        ledger.save_settings(&settings()).unwrap();
+        ledger.save_profile(&profile()).unwrap();
+
+        assert_eq!(ledger.settings().unwrap(), Some(settings()));
+        assert_eq!(ledger.profile().unwrap(), Some(profile()));
+    }
+
+    #[test]
+    fn master_data_round_trips_and_filters_archived_rows() {
+        let ledger = InMemoryLedger::new();
+        ledger.save_account(&account(false)).unwrap();
+        ledger.save_account_group(&account_group(false)).unwrap();
+        ledger.save_category(&category(false)).unwrap();
+        ledger.save_category_group(&category_group(false)).unwrap();
+        ledger.save_tag(&tag(false)).unwrap();
+        ledger.save_counterparty(&counterparty(false)).unwrap();
+        ledger.save_reconciliation_flag(&flag(false)).unwrap();
+        ledger.save_note_preset(&preset(false)).unwrap();
+
+        assert_eq!(
+            ledger.account(account(false).id()).unwrap(),
+            Some(account(false))
+        );
+        assert_eq!(
+            ledger.account_group(account_group(false).id()).unwrap(),
+            Some(account_group(false))
+        );
+        assert_eq!(
+            ledger.category(category(false).id()).unwrap(),
+            Some(category(false))
+        );
+        assert_eq!(
+            ledger.category_group(category_group(false).id()).unwrap(),
+            Some(category_group(false))
+        );
+        assert_eq!(ledger.tag(tag(false).id()).unwrap(), Some(tag(false)));
+        assert_eq!(
+            ledger.counterparty(counterparty(false).id()).unwrap(),
+            Some(counterparty(false))
+        );
+        assert_eq!(
+            ledger.reconciliation_flag(flag(false).id()).unwrap(),
+            Some(flag(false))
+        );
+        assert_eq!(
+            ledger.note_preset(preset(false).id()).unwrap(),
+            Some(preset(false))
+        );
+        assert_eq!(ledger.accounts(false).unwrap(), vec![account(false)]);
+        assert_eq!(
+            ledger.account_groups(false).unwrap(),
+            vec![account_group(false)]
+        );
+        assert_eq!(ledger.categories(false).unwrap(), vec![category(false)]);
+        assert_eq!(
+            ledger.category_groups(false).unwrap(),
+            vec![category_group(false)]
+        );
+        assert_eq!(ledger.tags(false).unwrap(), vec![tag(false)]);
+        assert_eq!(
+            ledger.counterparties(false).unwrap(),
+            vec![counterparty(false)]
+        );
+        assert_eq!(
+            ledger.reconciliation_flags(false).unwrap(),
+            vec![flag(false)]
+        );
+        assert_eq!(ledger.note_presets(false).unwrap(), vec![preset(false)]);
+
+        ledger.save_account(&account(true)).unwrap();
+        ledger.save_account_group(&account_group(true)).unwrap();
+        ledger.save_category(&category(true)).unwrap();
+        ledger.save_category_group(&category_group(true)).unwrap();
+        ledger.save_tag(&tag(true)).unwrap();
+        ledger.save_counterparty(&counterparty(true)).unwrap();
+        ledger.save_reconciliation_flag(&flag(true)).unwrap();
+        ledger.save_note_preset(&preset(true)).unwrap();
+
+        assert!(ledger.accounts(false).unwrap().is_empty());
+        assert!(ledger.account_groups(false).unwrap().is_empty());
+        assert!(ledger.categories(false).unwrap().is_empty());
+        assert!(ledger.category_groups(false).unwrap().is_empty());
+        assert!(ledger.tags(false).unwrap().is_empty());
+        assert!(ledger.counterparties(false).unwrap().is_empty());
+        assert!(ledger.reconciliation_flags(false).unwrap().is_empty());
+        assert!(ledger.note_presets(false).unwrap().is_empty());
+        assert_eq!(ledger.accounts(true).unwrap(), vec![account(true)]);
+        assert_eq!(
+            ledger.account_groups(true).unwrap(),
+            vec![account_group(true)]
+        );
+        assert_eq!(ledger.categories(true).unwrap(), vec![category(true)]);
+        assert_eq!(
+            ledger.category_groups(true).unwrap(),
+            vec![category_group(true)]
+        );
+        assert_eq!(ledger.tags(true).unwrap(), vec![tag(true)]);
+        assert_eq!(
+            ledger.counterparties(true).unwrap(),
+            vec![counterparty(true)]
+        );
+        assert_eq!(ledger.reconciliation_flags(true).unwrap(), vec![flag(true)]);
+        assert_eq!(ledger.note_presets(true).unwrap(), vec![preset(true)]);
+    }
+
+    #[test]
+    fn transactions_and_exchange_rates_filter_their_tombstones() {
+        let ledger = InMemoryLedger::new();
+        ledger.save_transaction(&transaction()).unwrap();
+        ledger
+            .save_transaction(&transaction().soft_deleted(timestamp(3_000)).unwrap())
+            .unwrap();
+        assert_eq!(
+            ledger.transaction(transaction().id()).unwrap(),
+            Some(transaction().soft_deleted(timestamp(3_000)).unwrap())
+        );
+        assert_eq!(ledger.transactions(false).unwrap(), Vec::new());
+        assert_eq!(
+            ledger.transactions(true).unwrap(),
+            vec![transaction().soft_deleted(timestamp(3_000)).unwrap()]
+        );
+
+        ledger
+            .save_exchange_rate(&exchange_rate(90, false))
+            .unwrap();
+        ledger.save_exchange_rate(&exchange_rate(91, true)).unwrap();
+        assert_eq!(
+            ledger.exchange_rates(false).unwrap(),
+            vec![exchange_rate(90, false)]
+        );
+        assert_eq!(
+            ledger.exchange_rates(true).unwrap(),
+            vec![exchange_rate(90, false), exchange_rate(91, true)]
+        );
+    }
+
+    #[test]
+    fn initialize_is_idempotent_and_account_setup_requires_settings() {
+        let ledger = InMemoryLedger::new();
+        assert!(
+            ledger
+                .create_account_with_opening_balance(&account(false), Some(&transaction()))
+                .is_err()
+        );
+
+        let initialized = ledger
+            .initialize(
+                &settings(),
+                &profile(),
+                &account(false),
+                &[category(false)],
+                Some(&transaction()),
+            )
+            .unwrap();
+        assert!(initialized);
+        let duplicate = ledger
+            .initialize(&settings(), &profile(), &account(false), &[], None)
+            .unwrap();
+        assert!(!duplicate);
+        assert_eq!(ledger.accounts(true).unwrap(), vec![account(false)]);
+        assert_eq!(ledger.categories(true).unwrap(), vec![category(false)]);
+        assert_eq!(ledger.transactions(true).unwrap(), vec![transaction()]);
+
+        assert!(
+            ledger
+                .create_account_with_opening_balance(&account(false), Some(&transaction()))
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn snapshots_report_missing_settings_and_profile() {
+        let ledger = InMemoryLedger::new();
+        assert!(ledger.snapshot().is_err());
+        assert!(ledger.export_snapshot().is_err());
+
+        ledger.save_settings(&settings()).unwrap();
+        assert!(ledger.export_snapshot().is_err());
+        ledger.save_profile(&profile()).unwrap();
+
+        let snapshot = ledger.snapshot().unwrap();
+        assert_eq!(snapshot.settings, settings());
+        assert!(snapshot.active_accounts.is_empty());
+        assert!(snapshot.active_transactions.is_empty());
+        assert!(snapshot.exchange_rates.is_empty());
+
+        let export = ledger.export_snapshot().unwrap();
+        assert_eq!(export.settings, settings());
+        assert_eq!(export.profile, profile());
+    }
+}

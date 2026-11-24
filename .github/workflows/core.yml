@@ -59,3 +59,30 @@ jobs:
         uses: taiki-e/install-action@cargo-deny
       - name: Check licenses, advisories, bans, and sources
         run: cargo deny check
+
+  coverage:
+    name: Coverage gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: llvm-tools-preview
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: coverage
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Measure and enforce coverage
+        run: |
+          cargo llvm-cov --workspace --branch --json --output-path coverage.json
+          python3 scripts/check_coverage.py coverage.json --branch
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage
+          path: coverage.json
+          retention-days: 14

@@ -236,5 +236,9 @@ mod tests {
             CurrencyScalePolicy::new(0, &[("USD", 2)]),
             Err(CurrencyError::InvalidPolicyVersion(0))
         );
+        assert_eq!(
+            CurrencyScalePolicy::v1().currency("ZZZ"),
+            Err(CurrencyError::UnknownCurrency("ZZZ".to_string()))
+        );
     }
 }

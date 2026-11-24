@@ -411,6 +411,95 @@ mod tests {
     }
 
     #[test]
+    fn kind_specific_fields_are_rejected() {
+        let category = Some(CategoryId::from_uuid(Uuid::from_u128(2)));
+        let destination = Some(id(2));
+        let counterparty = Some(CounterpartyId::from_uuid(Uuid::from_u128(3)));
+
+        for (kind, fields, expected) in [
+            (
+                TransactionKind::OpeningBalance,
+                TransactionFields {
+                    category_id: category,
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::CategoryNotAllowed,
+            ),
+            (
+                TransactionKind::OpeningBalance,
+                TransactionFields {
+                    destination_account_id: destination,
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::DestinationAccountNotAllowed,
+            ),
+            (
+                TransactionKind::OpeningBalance,
+                TransactionFields {
+                    destination_amount: Some(usd_minor(10)),
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::DestinationAmountNotAllowed,
+            ),
+            (
+                TransactionKind::OpeningBalance,
+                TransactionFields {
+                    counterparty_id: counterparty,
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::CounterpartyNotAllowed,
+            ),
+            (
+                TransactionKind::Expense,
+                TransactionFields {
+                    category_id: category,
+                    destination_account_id: destination,
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::DestinationAccountNotAllowed,
+            ),
+            (
+                TransactionKind::Income,
+                TransactionFields {
+                    category_id: category,
+                    destination_amount: Some(usd_minor(10)),
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::DestinationAmountNotAllowed,
+            ),
+            (
+                TransactionKind::Transfer,
+                TransactionFields::default(),
+                TransactionValidationError::DestinationAccountRequired,
+            ),
+            (
+                TransactionKind::Transfer,
+                TransactionFields {
+                    destination_account_id: destination,
+                    counterparty_id: counterparty,
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::CounterpartyNotAllowed,
+            ),
+            (
+                TransactionKind::Transfer,
+                TransactionFields {
+                    destination_account_id: destination,
+                    destination_amount: Some(usd_minor(0)),
+                    ..TransactionFields::default()
+                },
+                TransactionValidationError::DestinationAmountMustBePositive,
+            ),
+        ] {
+            assert_eq!(
+                transaction(kind, 100, fields).unwrap_err(),
+                expected,
+                "{kind:?}"
+            );
+        }
+    }
+
+    #[test]
     fn cross_currency_transfer_keeps_exact_destination_amount() {
         let cny = Money::new(10_000, CurrencyScalePolicy::v1().currency("CNY").unwrap());
         let usd = usd_minor(1_400);

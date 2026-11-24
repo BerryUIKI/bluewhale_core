@@ -37,6 +37,11 @@ The vendored SQLCipher/OpenSSL build needs a native Windows Perl and `nmake`; se
 
 ## Coverage
 
-- 100% branch coverage is required only for money, currency-scale, transfer, balance, rounding, and month-boundary modules.
-- The six public crates carry an 80% line gate.
-- Coverage thresholds are enabled as the corresponding modules land (P1.2 and P1.8), not while the crates are empty.
+Coverage uses `cargo-llvm-cov`. Branch coverage requires a nightly toolchain.
+
+```text
+cargo +nightly llvm-cov --workspace --branch --json --output-path coverage.json
+python3 scripts/check_coverage.py coverage.json --branch
+```
+
+The script enforces at least 80% line coverage for each of the six public crates (empty crates are skipped) and 100% branch coverage for money, currency-scale, transfer, balance, and month-boundary modules. On Windows, run it from the SQLCipher environment described above. The first run builds the workspace in `target/llvm-cov-target`; later runs are incremental. Measured figures and any residual branch exclusions are recorded in [COVERAGE.md](../quality/COVERAGE.md).

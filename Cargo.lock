@@ -209,6 +209,8 @@ name = "core-testkit"
 version = "0.1.0"
 dependencies = [
  "core-domain",
+ "jiff",
+ "uuid",
 ]
 
 [[package]]
