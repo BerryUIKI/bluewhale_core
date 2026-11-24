@@ -7,6 +7,7 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 ### Added
 
 - Money and currency primitives in `core-domain`: validated currency codes, the version 1 currency-scale policy, checked `Money` arithmetic, exact magnitude parsing, and minor-unit rounding, with unit and property tests.
+- Typed identifiers, ledger settings, ledger profile validation, and ledger-time-zone calendar intervals in `core-domain`, with jiff-backed UTC instants.
 - Rust workspace with the `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, and `core-testkit` crates.
 - Repository governance files: contribution guide, code of conduct, security policy, issue and pull-request templates, dependency update configuration, and editor configuration.
 - Documentation index and architecture decision record process.

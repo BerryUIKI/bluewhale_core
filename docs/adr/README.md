@@ -13,6 +13,7 @@ The R1-R6 review decisions live in their review documents under `docs/`. ADRs ar
 | [0003](0003-cross-repo-consumption-and-versioning.md) | Cross-repository consumption and versioning | Proposed |
 | [0004](0004-toolchain-ci-and-release.md) | Toolchain, CI, and release | Proposed |
 | [0005](0005-apple-source-reuse-and-provenance.md) | Apple source reuse and provenance | Accepted |
+| [0006](0006-time-and-calendar-library.md) | Time and calendar library | Accepted |
 
 ## Creating an ADR
 
