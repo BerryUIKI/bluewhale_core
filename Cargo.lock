@@ -97,6 +97,10 @@ name = "core-application"
 version = "0.1.0"
 dependencies = [
  "core-domain",
+ "core-testkit",
+ "jiff",
+ "unicode-normalization",
+ "uuid",
 ]
 
 [[package]]

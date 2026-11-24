@@ -5,6 +5,7 @@
 //! It must not depend on persistence, sync, networking, or client code.
 
 pub mod account;
+pub mod balance;
 pub mod calendar;
 pub mod category;
 pub mod counterparty;
@@ -16,14 +17,18 @@ mod naming;
 pub mod note_preset;
 pub mod profile;
 pub mod reconciliation;
+pub mod repository;
 pub mod settings;
+pub mod statistics;
 pub mod tag;
 pub mod transaction;
+pub mod validation;
 
 pub use account::{
     Account, AccountGroup, AccountGroupValidationError, AccountOptions, AccountValidationError,
     AssetAccountType,
 };
+pub use balance::{BalanceError, account_balance};
 pub use calendar::{InstantInterval, LedgerCalendar, LedgerCalendarError};
 pub use category::{
     Category, CategoryGroup, CategoryGroupValidationError, CategoryKind, CategoryOptions,
@@ -53,8 +58,17 @@ pub use reconciliation::{
     ReconciliationFlag, ReconciliationFlagOptions, ReconciliationFlagSystemKind,
     ReconciliationFlagValidationError,
 };
+pub use repository::{
+    AccountGroupRepository, AccountRepository, AccountSetupRepository, CategoryGroupRepository,
+    CategoryRepository, CounterpartyRepository, ExchangeRateRepository, LedgerBootstrapRepository,
+    LedgerProfileRepository, LedgerReadSnapshot, LedgerReadSnapshotRepository,
+    LedgerSettingsRepository, ReconciliationFlagRepository, RepositoryError, TagRepository,
+    TransactionNotePresetRepository, TransactionRepository,
+};
 pub use settings::{LedgerCalendarIdentifier, LedgerSettings};
+pub use statistics::{MonthlyStatistics, MonthlyStatisticsError, monthly_statistics};
 pub use tag::{LedgerTag, TagOptions, TagValidationError};
 pub use transaction::{
     Transaction, TransactionFields, TransactionKind, TransactionValidationError,
 };
+pub use validation::{LedgerValidationError, validate_transactions};

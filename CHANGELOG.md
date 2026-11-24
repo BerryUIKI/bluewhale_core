@@ -10,6 +10,9 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Typed identifiers, ledger settings, ledger profile validation, and ledger-time-zone calendar intervals in `core-domain`, with jiff-backed UTC instants.
 - Domain entities in `core-domain`: accounts and account groups, category groups and categories, tags, counterparties, transactions and transfers, reconciliation flags, and note presets, with validation rules.
 - Exchange rates in `core-domain`: exact rational quotes, scale-aware conversion with ties away from zero, and deterministic rate selection.
+- Repository traits in `core-domain`, account balances, duplicate-opening-balance validation, and monthly statistics in the ledger time zone.
+- Use cases in `core-application`: ledger initialization, account creation with an opening balance, transaction create/update/soft-delete/list, and transaction filtering with search and deterministic ordering.
+- In-memory repository fakes in `core-testkit` for use-case tests.
 - Rust workspace with the `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, and `core-testkit` crates.
 - Repository governance files: contribution guide, code of conduct, security policy, issue and pull-request templates, dependency update configuration, and editor configuration.
 - Documentation index and architecture decision record process.
