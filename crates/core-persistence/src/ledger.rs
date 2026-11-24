@@ -10,14 +10,14 @@ use core_domain::{
     CategoryGroupId, CategoryGroupRepository, CategoryId, CategoryKind, CategoryOptions,
     CategoryRepository, Counterparty, CounterpartyId, CounterpartyKind, CounterpartyRepository,
     Currency, ExchangeRate, ExchangeRateId, ExchangeRateRepository, ExchangeRateSource,
-    LedgerBootstrapRepository, LedgerCalendar, LedgerProfile, LedgerProfileId,
-    LedgerProfileRepository, LedgerReadSnapshot, LedgerReadSnapshotRepository, LedgerSettings,
-    LedgerSettingsId, LedgerSettingsRepository, LedgerTag, Money, ReconciliationFlag,
-    ReconciliationFlagId, ReconciliationFlagOptions, ReconciliationFlagRepository,
-    ReconciliationFlagSystemKind, RepositoryError, TagId, TagOptions, TagRepository, Transaction,
-    TransactionFields, TransactionId, TransactionKind, TransactionNotePreset,
-    TransactionNotePresetId, TransactionNotePresetRepository, TransactionNotePresetValidationError,
-    TransactionRepository, TransactionValidationError,
+    LedgerBootstrapRepository, LedgerCalendar, LedgerExportRepository, LedgerExportSnapshot,
+    LedgerProfile, LedgerProfileId, LedgerProfileRepository, LedgerReadSnapshot,
+    LedgerReadSnapshotRepository, LedgerSettings, LedgerSettingsId, LedgerSettingsRepository,
+    LedgerTag, Money, ReconciliationFlag, ReconciliationFlagId, ReconciliationFlagOptions,
+    ReconciliationFlagRepository, ReconciliationFlagSystemKind, RepositoryError, TagId, TagOptions,
+    TagRepository, Transaction, TransactionFields, TransactionId, TransactionKind,
+    TransactionNotePreset, TransactionNotePresetId, TransactionNotePresetRepository,
+    TransactionNotePresetValidationError, TransactionRepository, TransactionValidationError,
 };
 use jiff::Timestamp;
 use rusqlite::types::FromSql;
@@ -230,6 +230,20 @@ fn system_flag_kind_from_name(name: &str) -> Result<ReconciliationFlagSystemKind
             "unknown reconciliation flag kind: {other}"
         ))),
     }
+}
+
+fn collect_rows<T>(
+    connection: &Connection,
+    sql: &str,
+    mut map: impl FnMut(&Row<'_>) -> Result<T, RepositoryError>,
+) -> Result<Vec<T>, RepositoryError> {
+    let mut statement = connection.prepare(sql).map_err(to_repository_error)?;
+    let mut rows = statement.query([]).map_err(to_repository_error)?;
+    let mut items = Vec::new();
+    while let Some(row) = rows.next().map_err(to_repository_error)? {
+        items.push(map(row)?);
+    }
+    Ok(items)
 }
 
 fn map_settings(row: &Row<'_>) -> Result<LedgerSettings, RepositoryError> {
@@ -1440,6 +1454,77 @@ impl AccountSetupRepository for SqliteLedger {
             upsert_transaction(&transaction, opening_balance)?;
         }
         transaction.commit().map_err(to_repository_error)
+    }
+}
+
+impl LedgerExportRepository for SqliteLedger {
+    fn export_snapshot(&self) -> Result<LedgerExportSnapshot, RepositoryError> {
+        let mut connection = self.database.connection()?;
+        let transaction = connection.transaction().map_err(to_repository_error)?;
+        let settings = collect_rows(&transaction, "SELECT * FROM settings LIMIT 1", map_settings)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| RepositoryError::new("ledger is not initialized"))?;
+        let profile = collect_rows(&transaction, "SELECT * FROM profile LIMIT 1", map_profile)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| RepositoryError::new("ledger profile is not initialized"))?;
+        let snapshot = LedgerExportSnapshot {
+            settings,
+            profile,
+            account_groups: collect_rows(
+                &transaction,
+                "SELECT * FROM account_groups ORDER BY sort_order ASC, id ASC",
+                map_account_group,
+            )?,
+            accounts: collect_rows(
+                &transaction,
+                "SELECT * FROM accounts ORDER BY sort_order ASC, id ASC",
+                |row| map_account(&transaction, row),
+            )?,
+            category_groups: collect_rows(
+                &transaction,
+                "SELECT * FROM category_groups ORDER BY sort_order ASC, id ASC",
+                map_category_group,
+            )?,
+            categories: collect_rows(
+                &transaction,
+                "SELECT * FROM categories ORDER BY sort_order ASC, id ASC",
+                map_category,
+            )?,
+            tags: collect_rows(
+                &transaction,
+                "SELECT * FROM tags ORDER BY sort_order ASC, id ASC",
+                map_tag,
+            )?,
+            counterparties: collect_rows(
+                &transaction,
+                "SELECT * FROM counterparties ORDER BY sort_order ASC, id ASC",
+                map_counterparty,
+            )?,
+            reconciliation_flags: collect_rows(
+                &transaction,
+                "SELECT * FROM reconciliation_flags ORDER BY sort_order ASC, id ASC",
+                map_reconciliation_flag,
+            )?,
+            note_presets: collect_rows(
+                &transaction,
+                "SELECT * FROM note_presets ORDER BY sort_order ASC, id ASC",
+                map_note_preset,
+            )?,
+            transactions: collect_rows(
+                &transaction,
+                "SELECT * FROM transactions ORDER BY occurred_at ASC, id ASC",
+                |row| map_transaction(&transaction, row),
+            )?,
+            exchange_rates: collect_rows(
+                &transaction,
+                "SELECT * FROM exchange_rates ORDER BY effective_at ASC, id ASC",
+                map_exchange_rate,
+            )?,
+        };
+        transaction.commit().map_err(to_repository_error)?;
+        Ok(snapshot)
     }
 }
 

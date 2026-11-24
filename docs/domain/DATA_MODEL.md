@@ -308,12 +308,14 @@ A versioned JSON document contains:
 
 - `export_version`, `ledger_id`, `exported_at`, `app_version`;
 - ledger settings and profile;
-- accounts, category groups, categories, tags, counterparties;
-- transactions and association rows, including soft-deleted records;
-- exchange rates;
+- account groups and accounts, category groups and categories, tags, counterparties, reconciliation flags, and note presets, including archived records;
+- transactions and their tag associations, including soft-deleted records;
+- every exchange-rate revision, including superseded rates;
 - registry descriptors are device-local and excluded.
 
-Money is exported as `{ "minor_units": 12345, "currency": "USD", "scale": 2 }`. Ordering is deterministic. Import (v1.1) validates the version and schema and is all-or-nothing; it never partially mutates a ledger.
+Money is exported as `{ "minor_units": 12345, "currency": "USD", "scale": 2 }`. Every array is sorted by `id` in ascending UUID order and object keys follow the declared order, so the same ledger always produces the same document. Timestamps are UTC RFC 3339 with millisecond precision. `ledger_id` is the ledger's settings record identifier; the device-local registry identifier is not exported. Import (v1.1) validates the version and schema and is all-or-nothing; it never partially mutates a ledger.
+
+The authoritative shape is the JSON Schema at `contracts/export/v1/export.schema.json`, with a synthetic fixture beside it and the encoding rules in `docs/reference/export-format.md`.
 
 ## 10. Decisions accepted at R3
 

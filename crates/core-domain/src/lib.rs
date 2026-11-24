@@ -61,9 +61,9 @@ pub use reconciliation::{
 pub use repository::{
     AccountGroupRepository, AccountRepository, AccountSetupRepository, CategoryGroupRepository,
     CategoryRepository, CounterpartyRepository, ExchangeRateRepository, LedgerBootstrapRepository,
-    LedgerProfileRepository, LedgerReadSnapshot, LedgerReadSnapshotRepository,
-    LedgerSettingsRepository, ReconciliationFlagRepository, RepositoryError, TagRepository,
-    TransactionNotePresetRepository, TransactionRepository,
+    LedgerExportRepository, LedgerExportSnapshot, LedgerProfileRepository, LedgerReadSnapshot,
+    LedgerReadSnapshotRepository, LedgerSettingsRepository, ReconciliationFlagRepository,
+    RepositoryError, TagRepository, TransactionNotePresetRepository, TransactionRepository,
 };
 pub use settings::{LedgerCalendarIdentifier, LedgerSettings};
 pub use statistics::{MonthlyStatistics, MonthlyStatisticsError, monthly_statistics};

@@ -1,0 +1,444 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BerryUIKI/bluewhale_core/contracts/export/v1/export.schema.json",
+  "title": "Bluewhale ledger export v1",
+  "description": "A complete ledger export. Arrays are sorted by id in ascending UUID order, object keys are emitted in the order shown here, money is exact integer minor units, and timestamps are UTC RFC 3339 with millisecond precision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "export_version",
+    "ledger_id",
+    "exported_at",
+    "app_version",
+    "settings",
+    "profile",
+    "account_groups",
+    "accounts",
+    "category_groups",
+    "categories",
+    "tags",
+    "counterparties",
+    "reconciliation_flags",
+    "note_presets",
+    "transactions",
+    "exchange_rates"
+  ],
+  "properties": {
+    "export_version": { "const": 1 },
+    "ledger_id": { "$ref": "#/$defs/uuid" },
+    "exported_at": { "$ref": "#/$defs/timestamp" },
+    "app_version": { "type": "string", "minLength": 1 },
+    "settings": { "$ref": "#/$defs/settings" },
+    "profile": { "$ref": "#/$defs/profile" },
+    "account_groups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/accountGroup" }
+    },
+    "accounts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/account" }
+    },
+    "category_groups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/categoryGroup" }
+    },
+    "categories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/category" }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tag" }
+    },
+    "counterparties": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/counterparty" }
+    },
+    "reconciliation_flags": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reconciliationFlag" }
+    },
+    "note_presets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/notePreset" }
+    },
+    "transactions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transaction" }
+    },
+    "exchange_rates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/exchangeRate" }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "nullableUuid": {
+      "anyOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+    },
+    "nullableTimestamp": {
+      "anyOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }]
+    },
+    "nullableString": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minor_units", "currency", "scale"],
+      "properties": {
+        "minor_units": {
+          "type": "integer",
+          "minimum": -9223372036854775808,
+          "maximum": 9223372036854775807
+        },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "scale": { "type": "integer", "minimum": 0, "maximum": 9 }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "currency",
+        "currency_scale",
+        "currency_policy_version",
+        "calendar",
+        "time_zone",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "currency_scale": { "type": "integer", "minimum": 0, "maximum": 9 },
+        "currency_policy_version": { "type": "integer", "minimum": 1 },
+        "calendar": { "const": "gregorian" },
+        "time_zone": { "type": "string", "minLength": 1 },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "settings_id",
+        "name",
+        "emoji",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "settings_id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "emoji": { "type": "string", "minLength": 1 },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "accountGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "asset_type",
+        "currency",
+        "currency_scale",
+        "sort_order",
+        "is_archived",
+        "owner_id",
+        "account_group_id",
+        "note",
+        "is_hidden",
+        "is_included_in_net_worth",
+        "tag_ids",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "asset_type": {
+          "enum": ["cash", "checking", "savings", "stored_value"]
+        },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "currency_scale": { "type": "integer", "minimum": 0, "maximum": 9 },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "owner_id": { "$ref": "#/$defs/nullableUuid" },
+        "account_group_id": { "$ref": "#/$defs/nullableUuid" },
+        "note": { "type": "string" },
+        "is_hidden": { "type": "boolean" },
+        "is_included_in_net_worth": { "type": "boolean" },
+        "tag_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/uuid" }
+        },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "categoryGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["expense", "income"] },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "group_id",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["expense", "income"] },
+        "group_id": { "$ref": "#/$defs/nullableUuid" },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "color_hex",
+        "description",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "color_hex": { "type": "string", "pattern": "^#[0-9A-F]{6}$" },
+        "description": { "$ref": "#/$defs/nullableString" },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "counterparty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "kind": { "enum": ["household_member", "person", "organization"] },
+        "name": { "type": "string", "minLength": 1 },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "reconciliationFlag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "color_hex",
+        "system_kind",
+        "locks_transactions",
+        "shortcut_key",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "color_hex": { "type": "string", "pattern": "^#[0-9A-F]{6}$" },
+        "system_kind": {
+          "anyOf": [
+            { "enum": ["cleared", "needs_reimbursement", "issue"] },
+            { "type": "null" }
+          ]
+        },
+        "locks_transactions": { "type": "boolean" },
+        "shortcut_key": { "$ref": "#/$defs/nullableString" },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "notePreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text",
+        "sort_order",
+        "is_archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "text": { "type": "string", "minLength": 1 },
+        "sort_order": { "type": "integer" },
+        "is_archived": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "transaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "amount",
+        "destination_amount",
+        "occurred_at",
+        "account_id",
+        "destination_account_id",
+        "category_id",
+        "reconciliation_flag_id",
+        "counterparty_id",
+        "note",
+        "tag_ids",
+        "created_at",
+        "updated_at",
+        "deleted_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "kind": {
+          "enum": ["opening_balance", "expense", "income", "transfer"]
+        },
+        "amount": { "$ref": "#/$defs/money" },
+        "destination_amount": {
+          "anyOf": [{ "$ref": "#/$defs/money" }, { "type": "null" }]
+        },
+        "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "account_id": { "$ref": "#/$defs/uuid" },
+        "destination_account_id": { "$ref": "#/$defs/nullableUuid" },
+        "category_id": { "$ref": "#/$defs/nullableUuid" },
+        "reconciliation_flag_id": { "$ref": "#/$defs/nullableUuid" },
+        "counterparty_id": { "$ref": "#/$defs/nullableUuid" },
+        "note": { "$ref": "#/$defs/nullableString" },
+        "tag_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/uuid" }
+        },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" },
+        "deleted_at": { "$ref": "#/$defs/nullableTimestamp" }
+      }
+    },
+    "exchangeRate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_currency",
+        "source_currency_scale",
+        "reporting_currency",
+        "reporting_currency_scale",
+        "quote_numerator",
+        "quote_denominator",
+        "effective_at",
+        "source",
+        "superseded_at",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "source_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "source_currency_scale": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "reporting_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "reporting_currency_scale": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "quote_numerator": { "type": "integer", "minimum": 1 },
+        "quote_denominator": { "type": "integer", "minimum": 1 },
+        "effective_at": { "$ref": "#/$defs/timestamp" },
+        "source": { "enum": ["manual", "european_central_bank"] },
+        "superseded_at": { "$ref": "#/$defs/nullableTimestamp" },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" }
+      }
+    }
+  }
+}

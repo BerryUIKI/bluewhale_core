@@ -133,6 +133,10 @@ pub enum ApplicationError {
     Money(MoneyError),
     /// The repository failed.
     Repository(RepositoryError),
+    /// The application version supplied to an export is blank.
+    EmptyAppVersion,
+    /// The export document could not be serialized.
+    Serialization(String),
 }
 
 impl fmt::Display for ApplicationError {
@@ -240,6 +244,8 @@ impl fmt::Display for ApplicationError {
             Self::Validation(error) => error.fmt(formatter),
             Self::Money(error) => error.fmt(formatter),
             Self::Repository(error) => error.fmt(formatter),
+            Self::EmptyAppVersion => formatter.write_str("application version must not be empty"),
+            Self::Serialization(error) => write!(formatter, "serialization failed: {error}"),
         }
     }
 }

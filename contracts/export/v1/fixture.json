@@ -1,0 +1,162 @@
+{
+  "export_version": 1,
+  "ledger_id": "00000000-0000-0000-0000-000000000001",
+  "exported_at": "2026-11-24T12:00:00.000Z",
+  "app_version": "0.1.0",
+  "settings": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "currency": "USD",
+    "currency_scale": 2,
+    "currency_policy_version": 1,
+    "calendar": "gregorian",
+    "time_zone": "Asia/Singapore",
+    "created_at": "2026-11-01T00:00:00.000Z",
+    "updated_at": "2026-11-01T00:00:00.000Z"
+  },
+  "profile": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "settings_id": "00000000-0000-0000-0000-000000000001",
+    "name": "Household",
+    "emoji": "🏠",
+    "created_at": "2026-11-01T00:00:00.000Z",
+    "updated_at": "2026-11-01T00:00:00.000Z"
+  },
+  "account_groups": [
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "name": "Wallets",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "00000000-0000-0000-0000-000000000020",
+      "name": "Cash",
+      "asset_type": "cash",
+      "currency": "USD",
+      "currency_scale": 2,
+      "sort_order": 0,
+      "is_archived": false,
+      "owner_id": null,
+      "account_group_id": "00000000-0000-0000-0000-000000000010",
+      "note": "Everyday cash",
+      "is_hidden": false,
+      "is_included_in_net_worth": true,
+      "tag_ids": ["00000000-0000-0000-0000-000000000050"],
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "category_groups": [
+    {
+      "id": "00000000-0000-0000-0000-000000000030",
+      "name": "Living",
+      "kind": "expense",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "00000000-0000-0000-0000-000000000040",
+      "name": "Food",
+      "kind": "expense",
+      "group_id": "00000000-0000-0000-0000-000000000030",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "tags": [
+    {
+      "id": "00000000-0000-0000-0000-000000000050",
+      "name": "Travel",
+      "color_hex": "#112233",
+      "description": null,
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "counterparties": [
+    {
+      "id": "00000000-0000-0000-0000-000000000060",
+      "kind": "organization",
+      "name": "Grocer",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "reconciliation_flags": [
+    {
+      "id": "00000000-0000-0000-0000-000000000070",
+      "name": "Cleared",
+      "color_hex": "#00AA55",
+      "system_kind": "cleared",
+      "locks_transactions": true,
+      "shortcut_key": "C",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "note_presets": [
+    {
+      "id": "00000000-0000-0000-0000-000000000080",
+      "text": "Weekly shop",
+      "sort_order": 0,
+      "is_archived": false,
+      "created_at": "2026-11-01T00:00:00.000Z",
+      "updated_at": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000090",
+      "kind": "expense",
+      "amount": {
+        "minor_units": 12345,
+        "currency": "USD",
+        "scale": 2
+      },
+      "destination_amount": null,
+      "occurred_at": "2026-11-24T08:30:00.000Z",
+      "account_id": "00000000-0000-0000-0000-000000000020",
+      "destination_account_id": null,
+      "category_id": "00000000-0000-0000-0000-000000000040",
+      "reconciliation_flag_id": "00000000-0000-0000-0000-000000000070",
+      "counterparty_id": "00000000-0000-0000-0000-000000000060",
+      "note": "Lunch",
+      "tag_ids": ["00000000-0000-0000-0000-000000000050"],
+      "created_at": "2026-11-24T08:31:00.000Z",
+      "updated_at": "2026-11-24T08:31:00.000Z",
+      "deleted_at": "2026-11-25T09:00:00.000Z"
+    }
+  ],
+  "exchange_rates": [
+    {
+      "id": "00000000-0000-0000-0000-0000000000a0",
+      "source_currency": "CNY",
+      "source_currency_scale": 2,
+      "reporting_currency": "USD",
+      "reporting_currency_scale": 2,
+      "quote_numerator": 3,
+      "quote_denominator": 20,
+      "effective_at": "2026-11-23T00:00:00.000Z",
+      "source": "manual",
+      "superseded_at": null,
+      "created_at": "2026-11-23T00:00:00.000Z",
+      "updated_at": "2026-11-23T00:00:00.000Z"
+    }
+  ]
+}

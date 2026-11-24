@@ -16,6 +16,9 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Exchange-rate use cases with per-day manual revisions, historical conversion, and a dashboard that reports balances, converted net balance, monthly statistics, and daily cash flow.
 - SQLCipher-backed persistence in `core-persistence`: local schema v1 with its indexes and constraints, forward-only migrations, the `LedgerDatabase` open path (key, WAL, foreign keys, `application_id`, schema version), and `SqliteLedger` implementations of the domain repository traits.
 - Round-trip persistence tests covering encryption and wrong-key rejection, settings, profile, accounts, tags, categories, transactions and soft deletion, master data (account and category groups, counterparties, reconciliation flags, note presets), bootstrap idempotence, snapshots, exchange rates, and missing-row errors.
+- Versioned JSON export in `core-application`: a complete document with settings, profile, all master data, every transaction including soft-deleted records, and every exchange-rate revision, serialized deterministically with exact integer minor units and UTC millisecond timestamps.
+- Export contract v1 under `contracts/export/v1`: a JSON Schema, a synthetic fixture, and tests that validate both the fixture and exporter output against the schema and round-trip through the Rust document types.
+- `LedgerExportRepository` port with SQLCipher and in-memory implementations that read the whole ledger in one consistent transaction.
 - In-memory repository fakes in `core-testkit` for use-case tests.
 - Rust workspace with the `core-domain`, `core-application`, `core-persistence`, `core-sync`, `core-crypto`, and `core-testkit` crates.
 - Repository governance files: contribution guide, code of conduct, security policy, issue and pull-request templates, dependency update configuration, and editor configuration.

@@ -11,11 +11,11 @@ use core_domain::{
     AccountRepository, AccountSetupRepository, Category, CategoryGroup, CategoryGroupId,
     CategoryGroupRepository, CategoryId, CategoryRepository, Counterparty, CounterpartyId,
     CounterpartyRepository, ExchangeRate, ExchangeRateRepository, LedgerBootstrapRepository,
-    LedgerProfile, LedgerProfileRepository, LedgerReadSnapshot, LedgerReadSnapshotRepository,
-    LedgerSettings, LedgerSettingsRepository, ReconciliationFlag, ReconciliationFlagId,
-    ReconciliationFlagRepository, RepositoryError, TagId, TagRepository, Transaction,
-    TransactionId, TransactionNotePreset, TransactionNotePresetId, TransactionNotePresetRepository,
-    TransactionRepository,
+    LedgerExportRepository, LedgerExportSnapshot, LedgerProfile, LedgerProfileRepository,
+    LedgerReadSnapshot, LedgerReadSnapshotRepository, LedgerSettings, LedgerSettingsRepository,
+    ReconciliationFlag, ReconciliationFlagId, ReconciliationFlagRepository, RepositoryError, TagId,
+    TagRepository, Transaction, TransactionId, TransactionNotePreset, TransactionNotePresetId,
+    TransactionNotePresetRepository, TransactionRepository,
 };
 
 /// An in-memory ledger implementing every repository port.
@@ -473,6 +473,34 @@ impl LedgerReadSnapshotRepository for InMemoryLedger {
             active_accounts,
             active_transactions,
             exchange_rates,
+        })
+    }
+}
+
+impl LedgerExportRepository for InMemoryLedger {
+    fn export_snapshot(&self) -> Result<LedgerExportSnapshot, RepositoryError> {
+        let inner = self.inner.borrow();
+        let settings = inner
+            .settings
+            .clone()
+            .ok_or_else(|| repository_error("ledger is not initialized"))?;
+        let profile = inner
+            .profile
+            .clone()
+            .ok_or_else(|| repository_error("ledger profile is not initialized"))?;
+        Ok(LedgerExportSnapshot {
+            settings,
+            profile,
+            account_groups: inner.account_groups.values().cloned().collect(),
+            accounts: inner.accounts.values().cloned().collect(),
+            category_groups: inner.category_groups.values().cloned().collect(),
+            categories: inner.categories.values().cloned().collect(),
+            tags: inner.tags.values().cloned().collect(),
+            counterparties: inner.counterparties.values().cloned().collect(),
+            reconciliation_flags: inner.reconciliation_flags.values().cloned().collect(),
+            note_presets: inner.note_presets.values().cloned().collect(),
+            transactions: inner.transactions.values().cloned().collect(),
+            exchange_rates: inner.exchange_rates.values().cloned().collect(),
         })
     }
 }

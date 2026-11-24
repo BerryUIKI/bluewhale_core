@@ -11,13 +11,13 @@ use core_domain::{
     CategoryGroupRepository, CategoryId, CategoryKind, CategoryOptions, CategoryRepository,
     Counterparty, CounterpartyId, CounterpartyKind, CounterpartyRepository, Currency,
     CurrencyScalePolicy, ExchangeRateId, ExchangeRateRepository, ExchangeRateSource,
-    LedgerBootstrapRepository, LedgerCalendar, LedgerProfile, LedgerProfileId,
-    LedgerProfileRepository, LedgerReadSnapshotRepository, LedgerSettings, LedgerSettingsId,
-    LedgerSettingsRepository, LedgerTag, Money, ReconciliationFlag, ReconciliationFlagId,
-    ReconciliationFlagOptions, ReconciliationFlagRepository, ReconciliationFlagSystemKind,
-    RepositoryError, TagId, TagOptions, TagRepository, Transaction, TransactionFields,
-    TransactionId, TransactionKind, TransactionNotePreset, TransactionNotePresetId,
-    TransactionNotePresetRepository, TransactionRepository,
+    LedgerBootstrapRepository, LedgerCalendar, LedgerExportRepository, LedgerProfile,
+    LedgerProfileId, LedgerProfileRepository, LedgerReadSnapshotRepository, LedgerSettings,
+    LedgerSettingsId, LedgerSettingsRepository, LedgerTag, Money, ReconciliationFlag,
+    ReconciliationFlagId, ReconciliationFlagOptions, ReconciliationFlagRepository,
+    ReconciliationFlagSystemKind, RepositoryError, TagId, TagOptions, TagRepository, Transaction,
+    TransactionFields, TransactionId, TransactionKind, TransactionNotePreset,
+    TransactionNotePresetId, TransactionNotePresetRepository, TransactionRepository,
 };
 use core_persistence::SqliteLedger;
 use jiff::Timestamp;
@@ -366,6 +366,45 @@ fn master_data_round_trips_and_archives() {
     ledger.save_note_preset(&archived).unwrap();
     assert!(ledger.note_presets(false).unwrap().is_empty());
     assert_eq!(ledger.note_presets(true).unwrap(), vec![archived]);
+}
+
+#[test]
+fn export_snapshot_includes_archived_and_deleted_rows() {
+    let ledger = SqliteLedger::open_in_memory(KEY).unwrap();
+    ledger.save_settings(&settings()).unwrap();
+    ledger.save_profile(&profile()).unwrap();
+    ledger.save_tag(&tag()).unwrap();
+    ledger.save_account(&account()).unwrap();
+    ledger.save_category(&category()).unwrap();
+    ledger.save_transaction(&transaction()).unwrap();
+    ledger
+        .save_transaction(&transaction().soft_deleted(timestamp(3_000)).unwrap())
+        .unwrap();
+
+    let archived = Account::new(
+        account().id(),
+        "Cash",
+        AssetAccountType::Cash,
+        currency("USD"),
+        AccountOptions {
+            is_archived: true,
+            ..AccountOptions::default()
+        },
+        timestamp(1_000),
+        timestamp(2_000),
+    )
+    .unwrap();
+    ledger.save_account(&archived).unwrap();
+
+    let snapshot = ledger.export_snapshot().unwrap();
+    assert_eq!(snapshot.settings, settings());
+    assert_eq!(snapshot.profile, profile());
+    assert_eq!(snapshot.accounts.len(), 1);
+    assert!(snapshot.accounts[0].is_archived());
+    assert_eq!(snapshot.transactions.len(), 1);
+    assert!(snapshot.transactions[0].is_deleted());
+    assert_eq!(snapshot.tags.len(), 1);
+    assert_eq!(snapshot.categories.len(), 1);
 }
 
 #[test]

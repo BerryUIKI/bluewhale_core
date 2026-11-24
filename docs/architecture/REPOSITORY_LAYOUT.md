@@ -14,7 +14,7 @@ This document describes the target layout of the three repositories and what alr
 - **Release boundary = repository boundary.** Public core, public clients, and the private server are separate repositories with separate licenses and CI.
 - **One build system per repository.** Cargo for core and the client Rust code, pnpm for the web UI, Go modules for the server.
 - **Financial logic lives in the core.** UI components, Tauri commands, Kotlin plugins, and server handlers never implement money rules.
-- **Contracts are versioned and shared.** The local schema, sync protocol, and export format have explicit versions and fixtures in `bluewhale_core/contracts` (planned).
+- **Contracts are versioned and shared.** The local schema, sync protocol, and export format have explicit versions and fixtures in `bluewhale_core/contracts`; export v1 is implemented.
 - **Generated code is isolated and drift-checked.** IPC bindings, the Android Gradle project, sqlc output, and OpenAPI models have fixed locations and a CI check that regenerating produces no diff.
 - **Every repository is independently buildable.** Cross-repository dependencies are pinned; no repository relies on a sibling checkout being present.
 - **Open-source hygiene is part of the layout.** Contribution, security, conduct, changelog, issue and pull-request templates, CODEOWNERS, and dependency updates exist from the first commit.

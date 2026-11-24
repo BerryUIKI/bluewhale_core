@@ -13,7 +13,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Domain | [DATA_MODEL.md](domain/DATA_MODEL.md) | R3 approved |
 | Sync and server | [SYNC_AND_SERVER_DESIGN.md](sync/SYNC_AND_SERVER_DESIGN.md) | R4 approved |
 | Clients | [CLIENT_DESIGN.md](clients/CLIENT_DESIGN.md) | R5 approved, conditional on Phase 0 evidence |
-| Clients | [SPIKE_RESULTS.md](clients/SPIKE_RESULTS.md) | In progress |
+| Clients | [SPIKE_RESULTS.md](clients/SPIKE_RESULTS.md) | Complete |
 | Quality | [QUALITY_AND_DELIVERY.md](quality/QUALITY_AND_DELIVERY.md) | R6 approved |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
 | Plan | [P1.0_APPLE_REUSE_ASSESSMENT.md](plan/P1.0_APPLE_REUSE_ASSESSMENT.md) | Approved |
@@ -22,6 +22,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Development | [dependency-policy.md](development/dependency-policy.md) | Active |
 | Development | [licensing.md](development/licensing.md) | Active |
 | Reference | [versions.md](reference/versions.md) | Active |
+| Reference | [export-format.md](reference/export-format.md) | Active |
 | Reference | [apple-provenance.md](reference/apple-provenance.md) | Active |
 | Decisions | [adr/README.md](adr/README.md) | Template and index |
 

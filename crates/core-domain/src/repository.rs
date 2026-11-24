@@ -254,3 +254,42 @@ pub trait LedgerReadSnapshotRepository {
     /// Returns the snapshot.
     fn snapshot(&self) -> Result<LedgerReadSnapshot, RepositoryError>;
 }
+
+/// A complete ledger snapshot for export.
+///
+/// Unlike [`LedgerReadSnapshot`], this includes archived master data,
+/// soft-deleted transactions, and every settings-adjacent record. The order
+/// of each collection is unspecified; the exporter sorts it deterministically.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LedgerExportSnapshot {
+    /// The ledger settings.
+    pub settings: LedgerSettings,
+    /// The ledger profile.
+    pub profile: LedgerProfile,
+    /// Account groups, including archived groups.
+    pub account_groups: Vec<AccountGroup>,
+    /// Accounts, including archived accounts.
+    pub accounts: Vec<Account>,
+    /// Category groups, including archived groups.
+    pub category_groups: Vec<CategoryGroup>,
+    /// Categories, including archived categories.
+    pub categories: Vec<Category>,
+    /// Tags, including archived tags.
+    pub tags: Vec<LedgerTag>,
+    /// Counterparties, including archived counterparties.
+    pub counterparties: Vec<Counterparty>,
+    /// Reconciliation flags, including archived flags.
+    pub reconciliation_flags: Vec<ReconciliationFlag>,
+    /// Note presets, including archived presets.
+    pub note_presets: Vec<TransactionNotePreset>,
+    /// Transactions, including soft-deleted transactions.
+    pub transactions: Vec<Transaction>,
+    /// Every exchange-rate revision, including superseded rates.
+    pub exchange_rates: Vec<ExchangeRate>,
+}
+
+/// Reads a consistent snapshot of all ledger data for export.
+pub trait LedgerExportRepository {
+    /// Returns the complete snapshot in one consistent read.
+    fn export_snapshot(&self) -> Result<LedgerExportSnapshot, RepositoryError>;
+}

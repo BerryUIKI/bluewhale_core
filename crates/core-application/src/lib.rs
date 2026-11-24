@@ -8,6 +8,7 @@ pub mod accounts;
 pub mod dashboard;
 pub mod error;
 pub mod exchange_rates;
+pub mod export;
 pub mod filter;
 pub mod ledger;
 pub mod management;
@@ -26,6 +27,14 @@ pub use error::ApplicationError;
 pub use exchange_rates::{
     HistoricalMoneyConverter, ListExchangeRatesUseCase, SetManualExchangeRateRequest,
     SetManualExchangeRateUseCase,
+};
+pub use export::{
+    EXPORT_VERSION, ExportAccount, ExportAccountGroup, ExportAssetType, ExportCalendar,
+    ExportCategory, ExportCategoryGroup, ExportCategoryKind, ExportCounterparty,
+    ExportCounterpartyKind, ExportDocument, ExportExchangeRate, ExportExchangeRateSource,
+    ExportLedgerUseCase, ExportMoney, ExportNotePreset, ExportProfile, ExportReconciliationFlag,
+    ExportReconciliationFlagKind, ExportSettings, ExportTag, ExportTransaction,
+    ExportTransactionKind,
 };
 pub use filter::{FilterTransactionsUseCase, TransactionContext, TransactionQuery};
 pub use ledger::{
