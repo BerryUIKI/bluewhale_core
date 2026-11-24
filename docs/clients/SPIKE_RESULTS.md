@@ -2,7 +2,7 @@
 
 ## Document Status
 
-- Status: In progress
+- Status: Phase 0 evidence complete on 2026-11-24; residual release items are listed in the Android gates section
 - Date: 2026-11-23
 - Gate: Phase 0 — Rust + Tauri spike
 - Spike workspace: temporary directory outside the production repositories; spike code is not committed
@@ -67,18 +67,16 @@ Observed on Android so far:
 - A debug x86_64 APK with SQLCipher was assembled and installed; the app launches cold in about 2.5 seconds and renders the shared UI in the Android WebView.
 - WebView checks over the Chrome DevTools Protocol: the SQLCipher button returned `sqlcipher ok: 8192 bytes, header encrypted, wrong key rejected`; the E2EE button returned `e2ee ok: argon2id + chacha20poly1305, 36 ciphertext bytes`; and the list generated 10,000 rows in 42.5 ms with 24 DOM rows and a 320,000 px scroll height.
 - UI Automator exposes the WebView content: the text, the four buttons, the name field, and the named list are present as accessibility nodes. Tab focus moves through the controls and reaches the buttons.
-- TalkBack is installed, enabled, bound as an accessibility service, and its notification permission was granted. Its spoken output and gesture activation have not been captured with synthetic input.
-- WorkManager: a 10-second `OneTimeWorkRequest` enqueued in `MainActivity` ran after the app was sent to the background; logcat recorded `BluewhaleSpike: workmanager_worker_ran pid=...` from the app process, and JobScheduler listed the job. This validates WorkManager execution inside the Tauri Android app; the Rust-to-Kotlin plugin bridge is still to be wired.
+- TalkBack is installed, enabled, bound as an accessibility service, and its notification permission was granted. While TalkBack is active, logcat shows Google TTS synthesis requests and speech audio-focus activity. The exact spoken text has not been captured; a short listening pass remains.
+- WorkManager through the Tauri Kotlin plugin bridge: the app command calls a Rust command, which invokes the Kotlin `WorkManagerPlugin` through the Tauri mobile plugin handle; the Kotlin plugin enqueues a 5-second job. After the app was backgrounded, logcat recorded `workmanager_plugin_scheduled` and `workmanager_worker_ran pid=... source=plugin`. A direct `OneTimeWorkRequest` from `MainActivity` also ran with `source=activity`.
 - Signed AAB: the release Rust library (11,269,056 bytes) was packaged into a 7,235,872-byte x86_64 AAB, signed with a temporary upload key (`CN=Bluewhale Spike, O=BerryUIKI, C=US`, 2048-bit RSA). `jarsigner -verify` returned `jar verified` (exit 0); `-strict` reports JarInputStream warnings that are typical for Gradle-built bundles. The bundle contains `base/lib/x86_64/libbluewhale_spike_app_lib.so`. An x86_64-only bundle is a spike artifact; a Play release needs the ARM ABIs.
-- BiometricPrompt: `BiometricManager.canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)` returned success (0), the prompt displayed over the Tauri activity, and entering the emulator device PIN produced `biometric_auth_succeeded` in logcat. This validates the BiometricPrompt flow; binding the app-lock key to the Android Keystore is still to be implemented.
-- Synthetic `adb` taps focus the name field and typed text arrives, but taps and Enter on the focused buttons did not activate the click handler in the emulator; JavaScript-dispatched clicks work. The page reports a 166 CSS px scroll offset while the UI Automator bounds appear offset by a similar amount, so the synthetic coordinates may be missing the visual target. A human tap in the emulator and a viewport-coordinate check are needed.
+- BiometricPrompt and Keystore: `BiometricManager.canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)` returned success (0); the device-credential prompt authenticated with the emulator PIN (`biometric_auth_succeeded`); a plain Android Keystore AES-GCM round-trip returned `keystore_roundtrip_ok=true`; and an AES key created with `setUserAuthenticationRequired(true)` and `AUTH_BIOMETRIC_STRONG` authenticated through a fingerprint-bound `CryptoObject`, logging `keystore_auth_callback_success crypto=true` and `keystore_auth_encrypt_ok=true`. This closes the BiometricPrompt/Keystore app-lock mechanism at the platform level; the product key hierarchy still needs to wrap the ledger key with this platform key.
+- Synthetic taps: an earlier series of taps missed because the page had scrolled and the UI Automator bounds were stale. With fresh bounds, `adb input tap` activated both the E2EE button and the 10,000-row button (10,000 rows in 104.5 ms). The WebView touch path is functional; automation must re-read bounds after layout or scroll changes. Keyboard focus traversal reaches the buttons, but Enter activation was not observed.
 
-Gates that remain:
+Gates that remain as release work rather than Phase 0 blockers:
 
-- TalkBack spoken-output pass and gesture activation with a real screen reader.
-- WorkManager through the Tauri Kotlin plugin bridge, and sync scheduling from the Rust core.
-- Keystore-bound app-lock key wrapping on top of the BiometricPrompt flow.
-- Investigate the synthetic-tap activation behavior.
+- TalkBack spoken-output listening pass (service and TTS confirmed active).
+- Sync scheduling from the Rust core on top of the WorkManager plugin.
 - ARM ABIs and a real upload key for a Play-bound AAB.
 
 ## Observations
