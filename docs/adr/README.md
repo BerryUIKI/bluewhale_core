@@ -12,6 +12,7 @@ The R1-R6 review decisions live in their review documents under `docs/`. ADRs ar
 | [0002](0002-workspace-layout-and-repository-ports.md) | Workspace layout and repository ports | Proposed |
 | [0003](0003-cross-repo-consumption-and-versioning.md) | Cross-repository consumption and versioning | Proposed |
 | [0004](0004-toolchain-ci-and-release.md) | Toolchain, CI, and release | Proposed |
+| [0005](0005-apple-source-reuse-and-provenance.md) | Apple source reuse and provenance | Proposed |
 
 ## Creating an ADR
 
