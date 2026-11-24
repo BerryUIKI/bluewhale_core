@@ -13,4 +13,4 @@ This file records every reuse of algorithms, invariants, or test vectors from th
 
 | Date | Module | Apple commit | Source files | Reuse type | Rust location | Reviewer |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-24 | Assessment only; no code ported yet | — | — | Inventory and decision | — | — |
+| 2026-11-24 | Money and currency | `c1a0a76` (ledger branch `docs/claude-md`) | `Sources/BerryLedgerCore/Money/Money.swift`, `Currency.swift`, `MoneyParser.swift`, `MoneyRounding.swift`; `Tests/BerryLedgerCoreTests/MoneyTests.swift` | Algorithm port and behavioral vectors | `crates/core-domain/src/money.rs`, `crates/core-domain/src/currency.rs` | BerryUIKI |

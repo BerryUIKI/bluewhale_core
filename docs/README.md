@@ -16,7 +16,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Clients | [SPIKE_RESULTS.md](clients/SPIKE_RESULTS.md) | In progress |
 | Quality | [QUALITY_AND_DELIVERY.md](quality/QUALITY_AND_DELIVERY.md) | R6 approved |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
-| Plan | [P1.0_APPLE_REUSE_ASSESSMENT.md](plan/P1.0_APPLE_REUSE_ASSESSMENT.md) | Proposed for owner approval |
+| Plan | [P1.0_APPLE_REUSE_ASSESSMENT.md](plan/P1.0_APPLE_REUSE_ASSESSMENT.md) | Approved |
 | Development | [setup.md](development/setup.md) | Active |
 | Development | [build-test.md](development/build-test.md) | Active |
 | Development | [dependency-policy.md](development/dependency-policy.md) | Active |

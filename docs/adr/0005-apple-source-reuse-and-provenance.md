@@ -1,8 +1,9 @@
 # ADR-0005: Apple source reuse and provenance
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-24
 - Deciders: Bluewhale maintainers, repository owner
+- Approval: the repository owner approved the reuse decision on 2026-11-24
 
 ## Context
 
