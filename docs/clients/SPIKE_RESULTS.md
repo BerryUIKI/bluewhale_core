@@ -53,20 +53,33 @@
 
 ## Android gates
 
-Toolchain installation started on 2026-11-23:
+Toolchain installed on 2026-11-23 and 2026-11-24:
 
-- Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction.
+- Temurin JDK 21.0.13.1+2 (portable zip), SHA-256 verified before extraction; renamed to a plus-free path (`D:\dev\android\jdk\jdk-21`).
 - Android command-line tools 22.0, SHA-256 verified before extraction.
-- SDK package installation queued: `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. Tauri CLI 2.12.6's Android template compiles and targets API 37, so platform 37.0 is required; no API 37 Google APIs x86_64 system image is published yet, so the emulator uses the API 36 image. The download is several gigabytes and the observed network throughput is roughly 50-150 KB/s, so completion will take hours.
+- SDK packages installed: `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, `ndk;27.2.12479018`, `emulator`, and `system-images;android-36;google_apis;x86_64`. Tauri CLI 2.12.6's Android template compiles and targets API 37, so platform 37.0 is required; no API 37 Google APIs x86_64 system image is published yet, so the emulator uses the API 36 image.
 - Rust targets: all four Android targets (`aarch64-linux-android`, `armv7-linux-androideabi`, `i686-linux-android`, `x86_64-linux-android`) are installed on the pinned 1.97.1 toolchain. `cargo check --workspace --target aarch64-linux-android` and the `x86_64-linux-android` equivalent pass for the empty crates. (An earlier `aarch64-linux-android` target belonged to the default stable toolchain, not to the pinned toolchain.)
+- Emulator: AVD `bluewhale-api36` (Pixel 6 profile, Android 16 / API 36, `google_apis`, x86_64) boots with WHPX acceleration; `adb` reports `emulator-5554` online, the display is 1080x2400, and the TalkBack package `com.google.android.marvin.talkback` is installed.
+- `pnpm tauri android init --ci` generated the Gradle project with `compileSdk`/`targetSdk` 37, `minSdk` 24, application ID `com.berryui.bluewhale.spike`, and the Gradle 9.6.1 wrapper.
+
+Observed on Android so far:
+
+- A debug x86_64 APK with SQLCipher was assembled and installed; the app launches cold in about 2.5 seconds and renders the shared UI in the Android WebView.
+- WebView checks over the Chrome DevTools Protocol: the SQLCipher button returned `sqlcipher ok: 8192 bytes, header encrypted, wrong key rejected`; the E2EE button returned `e2ee ok: argon2id + chacha20poly1305, 36 ciphertext bytes`; and the list generated 10,000 rows in 42.5 ms with 24 DOM rows and a 320,000 px scroll height.
+- UI Automator exposes the WebView content: the text, the four buttons, the name field, and the named list are present as accessibility nodes. Tab focus moves through the controls and reaches the buttons.
+- TalkBack is installed, enabled, bound as an accessibility service, and its notification permission was granted. Its spoken output and gesture activation have not been captured with synthetic input.
+- WorkManager: a 10-second `OneTimeWorkRequest` enqueued in `MainActivity` ran after the app was sent to the background; logcat recorded `BluewhaleSpike: workmanager_worker_ran pid=...` from the app process, and JobScheduler listed the job. This validates WorkManager execution inside the Tauri Android app; the Rust-to-Kotlin plugin bridge is still to be wired.
+- Signed AAB: the release Rust library (11,269,056 bytes) was packaged into a 7,235,872-byte x86_64 AAB, signed with a temporary upload key (`CN=Bluewhale Spike, O=BerryUIKI, C=US`, 2048-bit RSA). `jarsigner -verify` returned `jar verified` (exit 0); `-strict` reports JarInputStream warnings that are typical for Gradle-built bundles. The bundle contains `base/lib/x86_64/libbluewhale_spike_app_lib.so`. An x86_64-only bundle is a spike artifact; a Play release needs the ARM ABIs.
+- BiometricPrompt: `BiometricManager.canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)` returned success (0), the prompt displayed over the Tauri activity, and entering the emulator device PIN produced `biometric_auth_succeeded` in logcat. This validates the BiometricPrompt flow; binding the app-lock key to the Android Keystore is still to be implemented.
+- Synthetic `adb` taps focus the name field and typed text arrives, but taps and Enter on the focused buttons did not activate the click handler in the emulator; JavaScript-dispatched clicks work. The page reports a 166 CSS px scroll offset while the UI Automator bounds appear offset by a similar amount, so the synthetic coordinates may be missing the visual target. A human tap in the emulator and a viewport-coordinate check are needed.
 
 Gates that remain:
 
-- Tauri Android build and debug APK on an emulator.
-- TalkBack accessibility check.
-- WorkManager background sync through a Kotlin plugin.
-- BiometricPrompt/Keystore app lock.
-- Signed AAB.
+- TalkBack spoken-output pass and gesture activation with a real screen reader.
+- WorkManager through the Tauri Kotlin plugin bridge, and sync scheduling from the Rust core.
+- Keystore-bound app-lock key wrapping on top of the BiometricPrompt flow.
+- Investigate the synthetic-tap activation behavior.
+- ARM ABIs and a real upload key for a Play-bound AAB.
 
 ## Observations
 
@@ -91,6 +104,10 @@ Gates that remain:
 - OS-level keyboard input was sent through `SendKeys` after focusing the WebView document with UI Automation. Six Tab presses reached the links, the name field, Greet, and Run SQLCipher check; Enter produced the SQLCipher result. CDP key events independently produced the same focus order, and typed characters reached the name field.
 - Microsoft Pinyin was activated with Win+Space and typed at the OS level; the WebView2 input received the composed text `你好`. The first attempt stayed in the English layout and was repeated after another layout switch.
 - Tauri CLI 2.12.6's Android template pins Android Gradle Plugin 9.3.1, Gradle 9.6.1, Kotlin 2.2.10, and `compileSdk`/`targetSdk` 37. Gradle 9.6.1 supports JVM 17-26, so the installed Temurin JDK 21 is accepted. The JDK path still contains a `+` character; it is renamed to a plus-free path after the SDK installation finishes.
+- The first Android APK build failed while configuring the vendored OpenSSL: `openssl-src` invoked Git's Cygwin Perl and could not load `Locale::Maketext::Simple` from `/usr/share/perl5`. This is the same class of failure as the earlier Windows build. The rebuild prepends Strawberry Perl's `perl\bin` and `c\bin` to `PATH` and unsets `PERL5LIB`, matching the Windows setup.
+- For an Android target, `openssl-src` rejects Strawberry Perl because it does not produce Unix-like paths, and Git's Cygwin Perl lacks the required modules. The working local setup is MSYS2 Perl 5.44 and GNU Make 4.4, the NDK `toolchains/llvm/prebuilt/windows-x86_64/bin` directory on `PATH`, and `CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER` pointing at the NDK's `x86_64-linux-android24-clang.cmd`. With that, OpenSSL and SQLCipher compiled and linked, producing a 153,473,976-byte debug `libbluewhale_spike_app_lib.so`. The Android Gradle build still runs on Linux in CI; the Windows steps are a local workaround.
+- Tauri's Android CLI creates a symbolic link from the Rust `.so` into the generated `jniLibs`; Windows refused it because Developer Mode is off and the shell lacks the symbolic-link privilege. For the spike, the `.so` and the frontend `dist` were copied into the generated project and Gradle's `assembleX86_64Debug` was run with the `rustBuild*` tasks excluded. The result was a 293,747,278-byte debug APK with SQLCipher that installs and runs.
+- UI Automator exposes the Android WebView content without TalkBack. The WebView also allows Chrome DevTools Protocol access over `adb forward` in the debug build, which was used for the E2EE and 10,000-row checks because synthetic taps did not activate the buttons.
 - The UI Automation tree is built lazily. The first query returned 17 Pane nodes; a second query after two seconds returned 38 nodes and exposed the document content: Text, Hyperlink, Image, Edit, four named Buttons, and a named List. Screen-reader-specific speech output has not been captured automatically, so a manual NVDA/Narrator pass remains.
 
 ## Next actions
