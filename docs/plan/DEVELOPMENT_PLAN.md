@@ -104,7 +104,8 @@ Critical path: **P0 → P1 → P2 → P3 → P4 → P5**. P6 is not committed an
    - Domain validation and invariants from R3.
 5. **P1.5 Application use cases**
    - Ledger setup, account management, category/tag/counterparty management.
-   - Transaction create/edit/soft-delete/restore, filters, dashboard, monthly statistics, reports, settings, exchange rates.
+   - Transaction create/edit/soft-delete/restore, filters, dashboard, monthly statistics, settings (reporting currency, time zone, profile), reconciliation flags, note presets, exchange rates.
+   - Reports are reimplemented with the client at P3.5, following the P1.0 assessment.
 6. **P1.6 Persistence**
    - SQLite schema v1, indexes, constraints, migration framework, SQLCipher.
    - Fixtures and migration preservation tests.

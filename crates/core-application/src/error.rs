@@ -133,6 +133,14 @@ pub enum ApplicationError {
     Money(MoneyError),
     /// The repository failed.
     Repository(RepositoryError),
+    /// The ledger profile has not been created yet.
+    ProfileNotInitialized,
+    /// A time-zone change was not explicitly confirmed.
+    TimeZoneChangeNotConfirmed,
+    /// The reconciliation flag does not exist.
+    ReconciliationFlagNotFound(core_domain::ReconciliationFlagId),
+    /// The note preset does not exist.
+    TransactionNotePresetNotFound(core_domain::TransactionNotePresetId),
     /// The application version supplied to an export is blank.
     EmptyAppVersion,
     /// The export document could not be serialized.
@@ -244,6 +252,16 @@ impl fmt::Display for ApplicationError {
             Self::Validation(error) => error.fmt(formatter),
             Self::Money(error) => error.fmt(formatter),
             Self::Repository(error) => error.fmt(formatter),
+            Self::ProfileNotInitialized => formatter.write_str("ledger profile is not initialized"),
+            Self::TimeZoneChangeNotConfirmed => {
+                formatter.write_str("time-zone change requires explicit confirmation")
+            }
+            Self::ReconciliationFlagNotFound(id) => {
+                write!(formatter, "reconciliation flag not found: {id}")
+            }
+            Self::TransactionNotePresetNotFound(id) => {
+                write!(formatter, "note preset not found: {id}")
+            }
             Self::EmptyAppVersion => formatter.write_str("application version must not be empty"),
             Self::Serialization(error) => write!(formatter, "serialization failed: {error}"),
         }

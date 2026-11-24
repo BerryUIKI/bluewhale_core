@@ -108,6 +108,24 @@ impl LedgerSettings {
             updated_at: at,
         }
     }
+
+    /// Returns settings with a new ledger time zone.
+    ///
+    /// The caller is responsible for obtaining the user's explicit
+    /// confirmation. Changing the time zone changes how instants are grouped
+    /// into ledger days and months; it never rewrites stored instants.
+    #[must_use]
+    pub fn changing_time_zone(&self, calendar: LedgerCalendar, at: Timestamp) -> Self {
+        Self {
+            id: self.id,
+            currency: self.currency.clone(),
+            currency_policy_version: self.currency_policy_version,
+            calendar_identifier: self.calendar_identifier,
+            calendar,
+            created_at: self.created_at,
+            updated_at: at,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -142,6 +160,30 @@ mod tests {
             LedgerCalendarIdentifier::Gregorian
         );
         assert_eq!(settings.created_at(), timestamp(1_000));
+    }
+
+    #[test]
+    fn time_zone_change_preserves_identity_and_currency() {
+        let policy = CurrencyScalePolicy::v1();
+        let settings = LedgerSettings::new(
+            LedgerSettingsId::from_uuid(Uuid::from_u128(3)),
+            policy.currency("USD").unwrap(),
+            1,
+            LedgerCalendar::new("UTC").unwrap(),
+            timestamp(1_000),
+            timestamp(1_000),
+        );
+
+        let changed = settings.changing_time_zone(
+            LedgerCalendar::new("Europe/Berlin").unwrap(),
+            timestamp(2_000),
+        );
+
+        assert_eq!(changed.id(), settings.id());
+        assert_eq!(changed.currency(), settings.currency());
+        assert_eq!(changed.calendar().identifier(), "Europe/Berlin");
+        assert_eq!(changed.created_at(), settings.created_at());
+        assert_eq!(changed.updated_at(), timestamp(2_000));
     }
 
     #[test]

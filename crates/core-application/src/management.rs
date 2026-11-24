@@ -5,8 +5,10 @@ use core_domain::{
     Account, AccountGroup, AccountGroupId, AccountGroupRepository, AccountId, AccountOptions,
     AccountRepository, AssetAccountType, Category, CategoryGroup, CategoryGroupId,
     CategoryGroupRepository, CategoryId, CategoryKind, CategoryOptions, CategoryRepository,
-    Counterparty, CounterpartyId, CounterpartyKind, CounterpartyRepository, LedgerTag, TagId,
-    TagOptions, TagRepository,
+    Counterparty, CounterpartyId, CounterpartyKind, CounterpartyRepository, LedgerTag,
+    ReconciliationFlag, ReconciliationFlagId, ReconciliationFlagOptions,
+    ReconciliationFlagRepository, TagId, TagOptions, TagRepository, TransactionNotePreset,
+    TransactionNotePresetId, TransactionNotePresetRepository,
 };
 
 use crate::error::ApplicationError;
@@ -716,6 +718,250 @@ impl<'a> UpdateAccountUseCase<'a> {
     }
 }
 
+/// The request to create a reconciliation flag.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CreateReconciliationFlagRequest {
+    /// The flag name.
+    pub name: String,
+    /// The `#RRGGBB` color.
+    pub color_hex: String,
+    /// Whether the flag prevents editing attached transactions.
+    pub locks_transactions: bool,
+    /// An optional single-letter keyboard shortcut.
+    pub shortcut_key: Option<String>,
+    /// The manual sort position.
+    pub sort_order: i32,
+}
+
+/// Creates a user-defined reconciliation flag.
+pub struct CreateReconciliationFlagUseCase<'a> {
+    repository: &'a dyn ReconciliationFlagRepository,
+    clock: &'a dyn Clock,
+    ids: &'a dyn IdSource,
+}
+
+impl<'a> CreateReconciliationFlagUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(
+        repository: &'a dyn ReconciliationFlagRepository,
+        clock: &'a dyn Clock,
+        ids: &'a dyn IdSource,
+    ) -> Self {
+        Self {
+            repository,
+            clock,
+            ids,
+        }
+    }
+
+    /// Creates and saves the flag. User-defined flags have no system kind.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the entity is invalid or the
+    /// repository fails.
+    pub fn execute(
+        &self,
+        request: &CreateReconciliationFlagRequest,
+    ) -> Result<ReconciliationFlag, ApplicationError> {
+        let now = self.clock.now();
+        let flag = ReconciliationFlag::new(
+            ReconciliationFlagId::from_uuid(next_id(self.ids)),
+            &request.name,
+            &request.color_hex,
+            ReconciliationFlagOptions {
+                system_kind: None,
+                locks_transactions: request.locks_transactions,
+                shortcut_key: request.shortcut_key.clone(),
+                sort_order: request.sort_order,
+                is_archived: false,
+            },
+            now,
+            now,
+        )
+        .map_err(ApplicationError::ReconciliationFlag)?;
+        self.repository.save_reconciliation_flag(&flag)?;
+        Ok(flag)
+    }
+}
+
+/// The request to update a reconciliation flag.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateReconciliationFlagRequest {
+    /// The flag to update.
+    pub id: ReconciliationFlagId,
+    /// The new name.
+    pub name: String,
+    /// The new `#RRGGBB` color.
+    pub color_hex: String,
+    /// Whether the flag prevents editing attached transactions.
+    pub locks_transactions: bool,
+    /// The new optional single-letter keyboard shortcut.
+    pub shortcut_key: Option<String>,
+    /// The new manual sort position.
+    pub sort_order: i32,
+    /// Whether the flag is archived.
+    pub is_archived: bool,
+}
+
+/// Updates and saves a reconciliation flag.
+pub struct UpdateReconciliationFlagUseCase<'a> {
+    repository: &'a dyn ReconciliationFlagRepository,
+    clock: &'a dyn Clock,
+}
+
+impl<'a> UpdateReconciliationFlagUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(repository: &'a dyn ReconciliationFlagRepository, clock: &'a dyn Clock) -> Self {
+        Self { repository, clock }
+    }
+
+    /// Updates and saves the flag, preserving its system kind.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the flag is missing, the entity is
+    /// invalid, or the repository fails.
+    pub fn execute(
+        &self,
+        request: &UpdateReconciliationFlagRequest,
+    ) -> Result<ReconciliationFlag, ApplicationError> {
+        let existing = self
+            .repository
+            .reconciliation_flag(request.id)?
+            .ok_or(ApplicationError::ReconciliationFlagNotFound(request.id))?;
+        let flag = ReconciliationFlag::new(
+            existing.id(),
+            &request.name,
+            &request.color_hex,
+            ReconciliationFlagOptions {
+                system_kind: existing.options().system_kind,
+                locks_transactions: request.locks_transactions,
+                shortcut_key: request.shortcut_key.clone(),
+                sort_order: request.sort_order,
+                is_archived: request.is_archived,
+            },
+            existing.created_at(),
+            self.clock.now(),
+        )
+        .map_err(ApplicationError::ReconciliationFlag)?;
+        self.repository.save_reconciliation_flag(&flag)?;
+        Ok(flag)
+    }
+}
+
+/// The request to create a transaction note preset.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CreateTransactionNotePresetRequest {
+    /// The preset text.
+    pub text: String,
+    /// The manual sort position.
+    pub sort_order: i32,
+}
+
+/// Creates a transaction note preset.
+pub struct CreateTransactionNotePresetUseCase<'a> {
+    repository: &'a dyn TransactionNotePresetRepository,
+    clock: &'a dyn Clock,
+    ids: &'a dyn IdSource,
+}
+
+impl<'a> CreateTransactionNotePresetUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(
+        repository: &'a dyn TransactionNotePresetRepository,
+        clock: &'a dyn Clock,
+        ids: &'a dyn IdSource,
+    ) -> Self {
+        Self {
+            repository,
+            clock,
+            ids,
+        }
+    }
+
+    /// Creates and saves the preset.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the entity is invalid or the
+    /// repository fails.
+    pub fn execute(
+        &self,
+        request: &CreateTransactionNotePresetRequest,
+    ) -> Result<TransactionNotePreset, ApplicationError> {
+        let now = self.clock.now();
+        let preset = TransactionNotePreset::new(
+            TransactionNotePresetId::from_uuid(next_id(self.ids)),
+            &request.text,
+            request.sort_order,
+            false,
+            now,
+            now,
+        )
+        .map_err(ApplicationError::NotePreset)?;
+        self.repository.save_note_preset(&preset)?;
+        Ok(preset)
+    }
+}
+
+/// The request to update a transaction note preset.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateTransactionNotePresetRequest {
+    /// The preset to update.
+    pub id: TransactionNotePresetId,
+    /// The new text.
+    pub text: String,
+    /// The new manual sort position.
+    pub sort_order: i32,
+    /// Whether the preset is archived.
+    pub is_archived: bool,
+}
+
+/// Updates and saves a transaction note preset.
+pub struct UpdateTransactionNotePresetUseCase<'a> {
+    repository: &'a dyn TransactionNotePresetRepository,
+    clock: &'a dyn Clock,
+}
+
+impl<'a> UpdateTransactionNotePresetUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(repository: &'a dyn TransactionNotePresetRepository, clock: &'a dyn Clock) -> Self {
+        Self { repository, clock }
+    }
+
+    /// Updates and saves the preset.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the preset is missing, the entity
+    /// is invalid, or the repository fails.
+    pub fn execute(
+        &self,
+        request: &UpdateTransactionNotePresetRequest,
+    ) -> Result<TransactionNotePreset, ApplicationError> {
+        let existing = self
+            .repository
+            .note_preset(request.id)?
+            .ok_or(ApplicationError::TransactionNotePresetNotFound(request.id))?;
+        let preset = TransactionNotePreset::new(
+            existing.id(),
+            &request.text,
+            request.sort_order,
+            request.is_archived,
+            existing.created_at(),
+            self.clock.now(),
+        )
+        .map_err(ApplicationError::NotePreset)?;
+        self.repository.save_note_preset(&preset)?;
+        Ok(preset)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -864,5 +1110,162 @@ mod tests {
 
         assert!(archived.is_archived());
         assert_eq!(archived.currency().code(), "USD");
+    }
+
+    #[test]
+    fn reconciliation_flags_create_and_update() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        let create = CreateReconciliationFlagUseCase::new(&ledger, &clock, &ids);
+
+        let flag = create
+            .execute(&CreateReconciliationFlagRequest {
+                name: "Needs review".to_string(),
+                color_hex: "#ff0000".to_string(),
+                locks_transactions: false,
+                shortcut_key: Some("r".to_string()),
+                sort_order: 1,
+            })
+            .unwrap();
+        assert_eq!(flag.color_hex(), "#FF0000");
+        assert_eq!(flag.options().shortcut_key.as_deref(), Some("R"));
+        assert_eq!(flag.options().system_kind, None);
+
+        let update = UpdateReconciliationFlagUseCase::new(&ledger, &clock);
+        let updated = update
+            .execute(&UpdateReconciliationFlagRequest {
+                id: flag.id(),
+                name: "Reviewed".to_string(),
+                color_hex: "#00ff00".to_string(),
+                locks_transactions: true,
+                shortcut_key: None,
+                sort_order: 2,
+                is_archived: true,
+            })
+            .unwrap();
+
+        assert!(updated.is_archived());
+        assert!(updated.locks_transactions());
+        assert_eq!(updated.created_at(), flag.created_at());
+        assert_eq!(ledger.reconciliation_flags(false).unwrap(), Vec::new());
+        assert_eq!(ledger.reconciliation_flags(true).unwrap(), vec![updated]);
+    }
+
+    #[test]
+    fn reconciliation_flag_update_preserves_the_system_kind() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let now = clock.now();
+        let system = ReconciliationFlag::new(
+            ReconciliationFlagId::from_uuid(uuid::Uuid::from_u128(7)),
+            "Cleared",
+            "#00AA55",
+            ReconciliationFlagOptions {
+                system_kind: Some(core_domain::ReconciliationFlagSystemKind::Cleared),
+                locks_transactions: true,
+                shortcut_key: Some("C".to_string()),
+                sort_order: 0,
+                is_archived: false,
+            },
+            now,
+            now,
+        )
+        .unwrap();
+        ledger.save_reconciliation_flag(&system).unwrap();
+        let update = UpdateReconciliationFlagUseCase::new(&ledger, &clock);
+
+        let updated = update
+            .execute(&UpdateReconciliationFlagRequest {
+                id: system.id(),
+                name: "Bank cleared".to_string(),
+                color_hex: "#00AA55".to_string(),
+                locks_transactions: true,
+                shortcut_key: Some("C".to_string()),
+                sort_order: 0,
+                is_archived: false,
+            })
+            .unwrap();
+
+        assert_eq!(
+            updated.options().system_kind,
+            Some(core_domain::ReconciliationFlagSystemKind::Cleared)
+        );
+        assert_eq!(updated.name(), "Bank cleared");
+    }
+
+    #[test]
+    fn reconciliation_flag_update_reports_a_missing_flag() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let update = UpdateReconciliationFlagUseCase::new(&ledger, &clock);
+        let id = ReconciliationFlagId::from_uuid(uuid::Uuid::from_u128(99));
+
+        assert_eq!(
+            update
+                .execute(&UpdateReconciliationFlagRequest {
+                    id,
+                    name: "Missing".to_string(),
+                    color_hex: "#112233".to_string(),
+                    locks_transactions: false,
+                    shortcut_key: None,
+                    sort_order: 0,
+                    is_archived: false,
+                })
+                .unwrap_err(),
+            ApplicationError::ReconciliationFlagNotFound(id)
+        );
+    }
+
+    #[test]
+    fn note_presets_create_update_and_archive() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        let create = CreateTransactionNotePresetUseCase::new(&ledger, &clock, &ids);
+
+        let preset = create
+            .execute(&CreateTransactionNotePresetRequest {
+                text: "  Weekly shop  ".to_string(),
+                sort_order: 1,
+            })
+            .unwrap();
+        assert_eq!(preset.text(), "Weekly shop");
+        assert_eq!(ledger.note_presets(false).unwrap(), vec![preset.clone()]);
+
+        let update = UpdateTransactionNotePresetUseCase::new(&ledger, &clock);
+        let archived = update
+            .execute(&UpdateTransactionNotePresetRequest {
+                id: preset.id(),
+                text: "Monthly shop".to_string(),
+                sort_order: 2,
+                is_archived: true,
+            })
+            .unwrap();
+
+        assert!(archived.is_archived());
+        assert_eq!(archived.created_at(), preset.created_at());
+        assert!(ledger.note_presets(false).unwrap().is_empty());
+        assert_eq!(ledger.note_presets(true).unwrap(), vec![archived]);
+    }
+
+    #[test]
+    fn note_preset_update_reports_a_missing_preset() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let update = UpdateTransactionNotePresetUseCase::new(&ledger, &clock);
+        let id = TransactionNotePresetId::from_uuid(uuid::Uuid::from_u128(99));
+
+        assert_eq!(
+            update
+                .execute(&UpdateTransactionNotePresetRequest {
+                    id,
+                    text: "Missing".to_string(),
+                    sort_order: 0,
+                    is_archived: false,
+                })
+                .unwrap_err(),
+            ApplicationError::TransactionNotePresetNotFound(id)
+        );
     }
 }

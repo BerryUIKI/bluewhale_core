@@ -3,8 +3,9 @@
 use core_domain::{
     Account, AccountId, AccountOptions, AssetAccountType, Category, CategoryId, CategoryKind,
     CategoryOptions, CurrencyScalePolicy, LedgerBootstrapRepository, LedgerCalendar, LedgerProfile,
-    LedgerProfileId, LedgerSettings, LedgerSettingsId, MoneyParser, Transaction, TransactionFields,
-    TransactionId, TransactionKind,
+    LedgerProfileId, LedgerProfileRepository, LedgerSettings, LedgerSettingsId,
+    LedgerSettingsRepository, MoneyParser, Transaction, TransactionFields, TransactionId,
+    TransactionKind,
 };
 
 use crate::error::ApplicationError;
@@ -253,11 +254,132 @@ impl<'a> InitializeLedgerUseCase<'a> {
     }
 }
 
+/// The request to update ledger settings.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateLedgerSettingsRequest {
+    /// The new reporting currency code.
+    pub currency_code: String,
+    /// The new IANA ledger time-zone identifier.
+    pub time_zone_identifier: String,
+    /// Confirms a time-zone change. Required when the identifier changes.
+    pub confirm_time_zone_change: bool,
+}
+
+/// Updates the reporting currency and ledger time zone.
+pub struct UpdateLedgerSettingsUseCase<'a> {
+    repository: &'a dyn LedgerSettingsRepository,
+    currency_policy: CurrencyScalePolicy,
+    clock: &'a dyn Clock,
+}
+
+impl<'a> UpdateLedgerSettingsUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(
+        repository: &'a dyn LedgerSettingsRepository,
+        currency_policy: CurrencyScalePolicy,
+        clock: &'a dyn Clock,
+    ) -> Self {
+        Self {
+            repository,
+            currency_policy,
+            clock,
+        }
+    }
+
+    /// Updates and saves the settings.
+    ///
+    /// A changed time-zone identifier is rejected unless
+    /// `confirm_time_zone_change` is set. The change affects how instants are
+    /// grouped into ledger days and months; stored instants are never
+    /// rewritten.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the ledger is not initialized, the
+    /// currency or time zone is invalid, a time-zone change is unconfirmed, or
+    /// the repository fails.
+    pub fn execute(
+        &self,
+        request: &UpdateLedgerSettingsRequest,
+    ) -> Result<LedgerSettings, ApplicationError> {
+        let existing = self
+            .repository
+            .settings()?
+            .ok_or(ApplicationError::LedgerNotInitialized)?;
+        let currency = self
+            .currency_policy
+            .currency(&request.currency_code)
+            .map_err(ApplicationError::Currency)?;
+        let calendar = LedgerCalendar::new(&request.time_zone_identifier)
+            .map_err(ApplicationError::Calendar)?;
+        let time_zone_changed = calendar.identifier() != existing.calendar().identifier();
+        if time_zone_changed && !request.confirm_time_zone_change {
+            return Err(ApplicationError::TimeZoneChangeNotConfirmed);
+        }
+        let now = self.clock.now();
+        let mut updated =
+            existing.changing_reporting_currency(currency, self.currency_policy.version(), now);
+        if time_zone_changed {
+            updated = updated.changing_time_zone(calendar, now);
+        }
+        self.repository.save_settings(&updated)?;
+        Ok(updated)
+    }
+}
+
+/// The request to update the ledger profile.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateLedgerProfileRequest {
+    /// The new ledger name.
+    pub name: String,
+    /// The new ledger emoji.
+    pub emoji: String,
+}
+
+/// Updates the ledger name and emoji.
+pub struct UpdateLedgerProfileUseCase<'a> {
+    repository: &'a dyn LedgerProfileRepository,
+    clock: &'a dyn Clock,
+}
+
+impl<'a> UpdateLedgerProfileUseCase<'a> {
+    /// Creates the use case.
+    #[must_use]
+    pub fn new(repository: &'a dyn LedgerProfileRepository, clock: &'a dyn Clock) -> Self {
+        Self { repository, clock }
+    }
+
+    /// Updates and saves the profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`ApplicationError`] when the profile does not exist, the
+    /// values are invalid, or the repository fails.
+    pub fn execute(
+        &self,
+        request: &UpdateLedgerProfileRequest,
+    ) -> Result<LedgerProfile, ApplicationError> {
+        let existing = self
+            .repository
+            .profile()?
+            .ok_or(ApplicationError::ProfileNotInitialized)?;
+        let updated = existing
+            .updating(&request.name, &request.emoji, self.clock.now())
+            .map_err(ApplicationError::Profile)?;
+        self.repository.save_profile(&updated)?;
+        Ok(updated)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_support::{FixedClock, SequenceIds};
-    use core_domain::{AccountRepository, CategoryRepository, TransactionRepository};
+    use core_domain::{
+        AccountRepository, CategoryRepository, LedgerProfileRepository, LedgerSettingsRepository,
+        TransactionRepository,
+    };
     use core_testkit::InMemoryLedger;
     use jiff::Timestamp;
 
@@ -347,5 +469,136 @@ mod tests {
         use_case.execute(&request).unwrap();
 
         assert!(ledger.transactions(true).unwrap().is_empty());
+    }
+
+    #[test]
+    fn settings_update_changes_currency_and_preserves_identity() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        let initialized =
+            InitializeLedgerUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock, &ids)
+                .execute(&request())
+                .unwrap();
+        let use_case = UpdateLedgerSettingsUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock);
+
+        let updated = use_case
+            .execute(&UpdateLedgerSettingsRequest {
+                currency_code: "EUR".to_string(),
+                time_zone_identifier: "Asia/Singapore".to_string(),
+                confirm_time_zone_change: false,
+            })
+            .unwrap();
+
+        assert_eq!(updated.id(), initialized.settings.id());
+        assert_eq!(updated.currency().code(), "EUR");
+        assert_eq!(updated.calendar().identifier(), "Asia/Singapore");
+        assert_eq!(updated.created_at(), initialized.settings.created_at());
+        assert_eq!(updated.updated_at(), clock.now());
+        assert_eq!(ledger.settings().unwrap().unwrap(), updated);
+    }
+
+    #[test]
+    fn time_zone_change_requires_confirmation_and_is_applied_when_confirmed() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        InitializeLedgerUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock, &ids)
+            .execute(&request())
+            .unwrap();
+        let use_case = UpdateLedgerSettingsUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock);
+
+        let unconfirmed = UpdateLedgerSettingsRequest {
+            currency_code: "USD".to_string(),
+            time_zone_identifier: "Europe/Berlin".to_string(),
+            confirm_time_zone_change: false,
+        };
+        assert_eq!(
+            use_case.execute(&unconfirmed).unwrap_err(),
+            ApplicationError::TimeZoneChangeNotConfirmed
+        );
+        assert_eq!(
+            ledger.settings().unwrap().unwrap().calendar().identifier(),
+            "Asia/Singapore"
+        );
+
+        let confirmed = UpdateLedgerSettingsRequest {
+            confirm_time_zone_change: true,
+            ..unconfirmed
+        };
+        let updated = use_case.execute(&confirmed).unwrap();
+        assert_eq!(updated.calendar().identifier(), "Europe/Berlin");
+        assert_eq!(updated.currency().code(), "USD");
+    }
+
+    #[test]
+    fn settings_update_rejects_unknown_currency_and_time_zone() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        InitializeLedgerUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock, &ids)
+            .execute(&request())
+            .unwrap();
+        let use_case = UpdateLedgerSettingsUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock);
+
+        let unknown_currency = UpdateLedgerSettingsRequest {
+            currency_code: "ZZZ".to_string(),
+            time_zone_identifier: "Asia/Singapore".to_string(),
+            confirm_time_zone_change: false,
+        };
+        assert!(matches!(
+            use_case.execute(&unknown_currency).unwrap_err(),
+            ApplicationError::Currency(_)
+        ));
+
+        let unknown_time_zone = UpdateLedgerSettingsRequest {
+            currency_code: "USD".to_string(),
+            time_zone_identifier: "Mars/Olympus".to_string(),
+            confirm_time_zone_change: true,
+        };
+        assert!(matches!(
+            use_case.execute(&unknown_time_zone).unwrap_err(),
+            ApplicationError::Calendar(_)
+        ));
+    }
+
+    #[test]
+    fn profile_update_changes_name_and_emoji() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let ids = SequenceIds::new();
+        InitializeLedgerUseCase::new(&ledger, CurrencyScalePolicy::v1(), &clock, &ids)
+            .execute(&request())
+            .unwrap();
+        let use_case = UpdateLedgerProfileUseCase::new(&ledger, &clock);
+
+        let updated = use_case
+            .execute(&UpdateLedgerProfileRequest {
+                name: "  Our home  ".to_string(),
+                emoji: "🐳".to_string(),
+            })
+            .unwrap();
+
+        assert_eq!(updated.name(), "Our home");
+        assert_eq!(updated.emoji(), "🐳");
+        assert_eq!(updated.updated_at(), clock.now());
+        assert_eq!(ledger.profile().unwrap().unwrap(), updated);
+    }
+
+    #[test]
+    fn profile_update_requires_an_initialized_profile() {
+        let ledger = InMemoryLedger::new();
+        let clock = clock();
+        let use_case = UpdateLedgerProfileUseCase::new(&ledger, &clock);
+
+        assert_eq!(
+            use_case
+                .execute(&UpdateLedgerProfileRequest {
+                    name: "Home".to_string(),
+                    emoji: "🏠".to_string(),
+                })
+                .unwrap_err(),
+            ApplicationError::ProfileNotInitialized
+        );
     }
 }
