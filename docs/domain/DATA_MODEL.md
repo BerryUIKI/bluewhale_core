@@ -268,6 +268,8 @@ One SQLite database per ledger, opened with:
 
 **Implementation notes (schema v1, P1.6).** The conceptual names above are singular; the shipped schema uses plural table names (`settings`, `profile`, `accounts`, `account_groups`, `categories`, `category_groups`, `tags`, `counterparties`, `reconciliation_flags`, `note_presets`, `transactions`, `exchange_rates`) plus the association tables `account_tags` and `transaction_tags`. One owner per account and one counterparty per transaction are nullable foreign-key columns (`accounts.owner_id`, `transactions.counterparty_id`), not association tables, matching the approved single-owner and single-counterparty rules. The `transaction` table is named `transactions` because `transaction` is a SQL keyword. The three sync tables (`outbox_operation`, `sync_cursor`, `sync_state`) are not part of local schema v1; they land with the sync engine in P2.3 and are added by a forward migration.
 
+**Implementation notes (schema v2, P2.3).** `0002_sync.sql` adds `outbox_operations`, `sync_entity_state`, `sync_applied_operations`, `sync_cursor`, `sync_conflicts`, and the reserved `sync_state` table. `sync_entity_state` stores each entity's revision and the server sequence of its latest known version; `sync_applied_operations` makes repeated pulls idempotent. Before an existing v1 database is migrated, the SQLite backup API writes a consistent copy to `<database>.backup-v1`, and `PRAGMA integrity_check` verifies it. A failed migration preserves the original database and the backup. The migration test creates a v1 database fixture and checks that its rows survive. The `sync_state` table is reserved for device and key metadata written by the client key store.
+
 ### 7.2 Constraints and indexes
 
 Schema v1 enforces in SQL:
@@ -301,6 +303,8 @@ An operation envelope contains:
 - encrypted payload, nonce, and key version.
 
 The payload contains the domain mutation in a versioned serialization. The server assigns a monotonic per-ledger sequence and stores ciphertext plus routing metadata. Local writes commit first; the outbox drains asynchronously. Entity revision detects conflicts; R4 defines conflict application, tombstones, retention, compaction, and restore.
+
+**Implementation notes (P2.3).** The decrypted payload is the export v1 entity object for the envelope's entity type, serialized as compact JSON and validated through the domain constructors. Local changes are written atomically with their outbox operation and entity revision. The store tracks each entity's revision and latest known server sequence; an operation at or before that sequence is already reflected locally and is skipped. Financial conflicts are recorded when the local version loses in server order. Snapshots carry the export document, the covered sequence, the local schema version, and every entity revision.
 
 ## 9. Export contract
 

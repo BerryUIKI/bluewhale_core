@@ -553,11 +553,11 @@ impl_has_id!(
     ExportExchangeRate,
 );
 
-fn format_timestamp(value: Timestamp) -> String {
+pub(crate) fn format_timestamp(value: Timestamp) -> String {
     value.strftime("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
 }
 
-fn export_settings(settings: &LedgerSettings) -> ExportSettings {
+pub(crate) fn export_settings(settings: &LedgerSettings) -> ExportSettings {
     ExportSettings {
         id: settings.id().to_string(),
         currency: settings.currency().code().to_string(),
@@ -572,7 +572,7 @@ fn export_settings(settings: &LedgerSettings) -> ExportSettings {
     }
 }
 
-fn export_profile(profile: &LedgerProfile) -> ExportProfile {
+pub(crate) fn export_profile(profile: &LedgerProfile) -> ExportProfile {
     ExportProfile {
         id: profile.id().to_string(),
         settings_id: profile.settings_id().to_string(),
@@ -583,7 +583,7 @@ fn export_profile(profile: &LedgerProfile) -> ExportProfile {
     }
 }
 
-fn export_account_group(group: &AccountGroup) -> ExportAccountGroup {
+pub(crate) fn export_account_group(group: &AccountGroup) -> ExportAccountGroup {
     ExportAccountGroup {
         id: group.id().to_string(),
         name: group.name().to_string(),
@@ -594,7 +594,7 @@ fn export_account_group(group: &AccountGroup) -> ExportAccountGroup {
     }
 }
 
-fn export_account(account: &Account) -> ExportAccount {
+pub(crate) fn export_account(account: &Account) -> ExportAccount {
     let options = account.options();
     ExportAccount {
         id: account.id().to_string(),
@@ -620,7 +620,7 @@ fn export_account(account: &Account) -> ExportAccount {
     }
 }
 
-fn export_category_group(group: &CategoryGroup) -> ExportCategoryGroup {
+pub(crate) fn export_category_group(group: &CategoryGroup) -> ExportCategoryGroup {
     ExportCategoryGroup {
         id: group.id().to_string(),
         name: group.name().to_string(),
@@ -632,7 +632,7 @@ fn export_category_group(group: &CategoryGroup) -> ExportCategoryGroup {
     }
 }
 
-fn export_category(category: &Category) -> ExportCategory {
+pub(crate) fn export_category(category: &Category) -> ExportCategory {
     let options = category.options();
     ExportCategory {
         id: category.id().to_string(),
@@ -646,14 +646,14 @@ fn export_category(category: &Category) -> ExportCategory {
     }
 }
 
-fn export_category_kind(kind: CategoryKind) -> ExportCategoryKind {
+pub(crate) fn export_category_kind(kind: CategoryKind) -> ExportCategoryKind {
     match kind {
         CategoryKind::Expense => ExportCategoryKind::Expense,
         CategoryKind::Income => ExportCategoryKind::Income,
     }
 }
 
-fn export_tag(tag: &LedgerTag) -> ExportTag {
+pub(crate) fn export_tag(tag: &LedgerTag) -> ExportTag {
     let options = tag.options();
     ExportTag {
         id: tag.id().to_string(),
@@ -667,7 +667,7 @@ fn export_tag(tag: &LedgerTag) -> ExportTag {
     }
 }
 
-fn export_counterparty(counterparty: &Counterparty) -> ExportCounterparty {
+pub(crate) fn export_counterparty(counterparty: &Counterparty) -> ExportCounterparty {
     ExportCounterparty {
         id: counterparty.id().to_string(),
         kind: match counterparty.kind() {
@@ -683,7 +683,7 @@ fn export_counterparty(counterparty: &Counterparty) -> ExportCounterparty {
     }
 }
 
-fn export_reconciliation_flag(flag: &ReconciliationFlag) -> ExportReconciliationFlag {
+pub(crate) fn export_reconciliation_flag(flag: &ReconciliationFlag) -> ExportReconciliationFlag {
     let options = flag.options();
     ExportReconciliationFlag {
         id: flag.id().to_string(),
@@ -705,7 +705,7 @@ fn export_reconciliation_flag(flag: &ReconciliationFlag) -> ExportReconciliation
     }
 }
 
-fn export_note_preset(preset: &TransactionNotePreset) -> ExportNotePreset {
+pub(crate) fn export_note_preset(preset: &TransactionNotePreset) -> ExportNotePreset {
     ExportNotePreset {
         id: preset.id().to_string(),
         text: preset.text().to_string(),
@@ -716,7 +716,7 @@ fn export_note_preset(preset: &TransactionNotePreset) -> ExportNotePreset {
     }
 }
 
-fn export_money(money: &Money) -> ExportMoney {
+pub(crate) fn export_money(money: &Money) -> ExportMoney {
     ExportMoney {
         minor_units: money.minor_units(),
         currency: money.currency().code().to_string(),
@@ -724,7 +724,7 @@ fn export_money(money: &Money) -> ExportMoney {
     }
 }
 
-fn export_transaction(transaction: &Transaction) -> ExportTransaction {
+pub(crate) fn export_transaction(transaction: &Transaction) -> ExportTransaction {
     let fields = transaction.fields();
     ExportTransaction {
         id: transaction.id().to_string(),
@@ -750,7 +750,7 @@ fn export_transaction(transaction: &Transaction) -> ExportTransaction {
     }
 }
 
-fn export_exchange_rate(rate: &ExchangeRate) -> ExportExchangeRate {
+pub(crate) fn export_exchange_rate(rate: &ExchangeRate) -> ExportExchangeRate {
     let quote = rate.quote();
     ExportExchangeRate {
         id: rate.id().to_string(),

@@ -19,6 +19,8 @@ Revision note (2026-11-25): P2.1 publishes the version 1 contract in `contracts/
 
 Revision note (2026-11-25, P2.2): `core-crypto` implements the key hierarchy with Argon2id (64 MiB, 3 iterations, one lane), ChaCha20-Poly1305, X25519 with HKDF-SHA256, and Ed25519. The key record, wrapped LDK, and recovery envelope are 89, 93, and 61 bytes; the recovery key uses Crockford Base32 with a 20-bit checksum. `docs/reference/crypto.md` records the formats, test vectors, and host timing.
 
+Revision note (2026-11-25, P2.3): the client sync engine is implemented in `core-sync`: local changes commit atomically with their outbox operation and entity revision; push, pull, acknowledgement, idempotent retries, conflicts, and snapshots run over a transport port. The decrypted payload version 1 is the export v1 entity object. Each entity tracks the server sequence of its latest known version, so an operation at or before that sequence is skipped; an applied operation sets the entity revision to `base_revision + 1`, and a later own operation that supersedes an earlier remote one is reapplied without a conflict. Financial conflicts are recorded on the device whose local version loses in server order. Schema v2 adds the sync tables. The blocking HTTP transport and client command wiring follow in P2.5 and P3.1.
+
 ## 1. Goals and non-goals
 
 Goals:

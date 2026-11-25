@@ -7,6 +7,7 @@
 
 use std::fmt;
 
+use core_domain::{SyncEntityType, SyncOperation, SyncOperationType};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -110,6 +111,44 @@ impl EntityType {
     pub fn allows(self, operation: OperationType) -> bool {
         self.allowed_operations().contains(&operation)
     }
+
+    /// Converts to the storage-neutral sync entity type.
+    #[must_use]
+    pub const fn to_sync(self) -> SyncEntityType {
+        match self {
+            Self::Account => SyncEntityType::Account,
+            Self::AccountGroup => SyncEntityType::AccountGroup,
+            Self::Category => SyncEntityType::Category,
+            Self::CategoryGroup => SyncEntityType::CategoryGroup,
+            Self::Counterparty => SyncEntityType::Counterparty,
+            Self::ExchangeRate => SyncEntityType::ExchangeRate,
+            Self::LedgerProfile => SyncEntityType::LedgerProfile,
+            Self::LedgerSettings => SyncEntityType::LedgerSettings,
+            Self::NotePreset => SyncEntityType::NotePreset,
+            Self::ReconciliationFlag => SyncEntityType::ReconciliationFlag,
+            Self::Tag => SyncEntityType::Tag,
+            Self::Transaction => SyncEntityType::Transaction,
+        }
+    }
+
+    /// Converts from the storage-neutral sync entity type.
+    #[must_use]
+    pub const fn from_sync(value: SyncEntityType) -> Self {
+        match value {
+            SyncEntityType::Account => Self::Account,
+            SyncEntityType::AccountGroup => Self::AccountGroup,
+            SyncEntityType::Category => Self::Category,
+            SyncEntityType::CategoryGroup => Self::CategoryGroup,
+            SyncEntityType::Counterparty => Self::Counterparty,
+            SyncEntityType::ExchangeRate => Self::ExchangeRate,
+            SyncEntityType::LedgerProfile => Self::LedgerProfile,
+            SyncEntityType::LedgerSettings => Self::LedgerSettings,
+            SyncEntityType::NotePreset => Self::NotePreset,
+            SyncEntityType::ReconciliationFlag => Self::ReconciliationFlag,
+            SyncEntityType::Tag => Self::Tag,
+            SyncEntityType::Transaction => Self::Transaction,
+        }
+    }
 }
 
 impl fmt::Display for EntityType {
@@ -162,6 +201,32 @@ impl OperationType {
             Self::Restore => "restore",
             Self::SettingsReplace => "settings_replace",
             Self::Upsert => "upsert",
+        }
+    }
+
+    /// Converts to the storage-neutral sync operation type.
+    #[must_use]
+    pub const fn to_sync(self) -> SyncOperationType {
+        match self {
+            Self::Delete => SyncOperationType::Delete,
+            Self::ProfileReplace => SyncOperationType::ProfileReplace,
+            Self::RateUpsert => SyncOperationType::RateUpsert,
+            Self::Restore => SyncOperationType::Restore,
+            Self::SettingsReplace => SyncOperationType::SettingsReplace,
+            Self::Upsert => SyncOperationType::Upsert,
+        }
+    }
+
+    /// Converts from the storage-neutral sync operation type.
+    #[must_use]
+    pub const fn from_sync(value: SyncOperationType) -> Self {
+        match value {
+            SyncOperationType::Delete => Self::Delete,
+            SyncOperationType::ProfileReplace => Self::ProfileReplace,
+            SyncOperationType::RateUpsert => Self::RateUpsert,
+            SyncOperationType::Restore => Self::Restore,
+            SyncOperationType::SettingsReplace => Self::SettingsReplace,
+            SyncOperationType::Upsert => Self::Upsert,
         }
     }
 }
@@ -334,6 +399,50 @@ impl OperationEnvelope {
 
         output.push('}');
         output.into_bytes()
+    }
+
+    /// Builds an envelope from a stored sync operation.
+    #[must_use]
+    pub fn from_sync_operation(operation: &SyncOperation) -> Self {
+        Self {
+            protocol_version: PROTOCOL_VERSION,
+            op_id: operation.op_id,
+            ledger_id: operation.ledger_id,
+            device_id: operation.device_id,
+            entity_type: EntityType::from_sync(operation.entity_type),
+            entity_id: operation.entity_id,
+            op_type: OperationType::from_sync(operation.op_type),
+            base_revision: operation.base_revision,
+            client_timestamp: operation.client_timestamp,
+            idempotency_key: operation.idempotency_key,
+            key_version: operation.key_version,
+            nonce: operation.nonce.clone(),
+            ciphertext: operation.ciphertext.clone(),
+            payload_version: operation.payload_version,
+            signature: operation.signature.clone(),
+        }
+    }
+
+    /// Converts the envelope to a stored sync operation.
+    #[must_use]
+    pub fn to_sync_operation(&self, server_seq: Option<u64>) -> SyncOperation {
+        SyncOperation {
+            op_id: self.op_id,
+            ledger_id: self.ledger_id,
+            device_id: self.device_id,
+            entity_type: self.entity_type.to_sync(),
+            entity_id: self.entity_id,
+            op_type: self.op_type.to_sync(),
+            base_revision: self.base_revision,
+            client_timestamp: self.client_timestamp,
+            idempotency_key: self.idempotency_key,
+            key_version: self.key_version,
+            nonce: self.nonce.clone(),
+            ciphertext: self.ciphertext.clone(),
+            payload_version: self.payload_version,
+            signature: self.signature.clone(),
+            server_seq,
+        }
     }
 }
 

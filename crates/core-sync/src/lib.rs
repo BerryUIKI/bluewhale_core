@@ -11,10 +11,17 @@
 //! with `core-crypto`. This crate performs no I/O.
 
 pub mod api;
+pub mod engine;
 pub mod envelope;
+pub mod snapshot;
 
 pub use api::*;
+pub use engine::{
+    PullOutcome, PushOutcome, SyncEngine, SyncError, SyncKeys, SyncOutcome, SyncTransport,
+    SyncTransportError, sha256_hex,
+};
 pub use envelope::*;
+pub use snapshot::{EncryptedSnapshot, SNAPSHOT_VERSION, SnapshotMetadata};
 
 /// The sync protocol version written and accepted by this build.
 ///

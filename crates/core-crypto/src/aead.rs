@@ -8,7 +8,7 @@ use chacha20poly1305::aead::{Aead, Payload};
 use chacha20poly1305::{ChaCha20Poly1305, KeyInit};
 use zeroize::Zeroizing;
 
-use crate::{CryptoError, SymmetricKey};
+use crate::{CryptoError, SymmetricKey, random};
 
 /// The AEAD nonce length, in bytes.
 pub const NONCE_LEN: usize = 12;
@@ -39,6 +39,26 @@ pub fn seal(
             },
         )
         .map_err(|_| CryptoError::EncryptionFailed)
+}
+
+/// Encrypts a plaintext with a fresh random nonce.
+///
+/// This is the preferred entry point for protocols that construct their own
+/// envelopes.
+///
+/// # Errors
+///
+/// Returns [`CryptoError::RandomnessUnavailable`] when the random source fails
+/// and [`CryptoError::EncryptionFailed`] when the cipher rejects the input.
+pub fn seal_with_random_nonce(
+    key: &SymmetricKey,
+    associated_data: &[u8],
+    plaintext: &[u8],
+) -> Result<([u8; NONCE_LEN], Vec<u8>), CryptoError> {
+    let mut nonce = [0_u8; NONCE_LEN];
+    random::fill(&mut nonce)?;
+    let ciphertext = seal(key, &nonce, associated_data, plaintext)?;
+    Ok((nonce, ciphertext))
 }
 
 /// Decrypts a ciphertext and verifies its authentication tag.
@@ -112,5 +132,17 @@ mod tests {
             open(&key, &nonce, b"", &sealed).err(),
             Some(CryptoError::DecryptionFailed)
         );
+    }
+
+    #[test]
+    fn random_nonce_sealing_round_trips() {
+        let key = SymmetricKey::from_bytes([3; 32]);
+        let (nonce, sealed) = seal_with_random_nonce(&key, b"header", b"secret").unwrap();
+        assert_eq!(
+            &open(&key, &nonce, b"header", &sealed).unwrap()[..],
+            b"secret"
+        );
+        let (other_nonce, _) = seal_with_random_nonce(&key, b"header", b"secret").unwrap();
+        assert_ne!(nonce, other_nonce);
     }
 }

@@ -10,17 +10,18 @@ approved design is [SYNC_AND_SERVER_DESIGN.md](../sync/SYNC_AND_SERVER_DESIGN.md
 
 ## Scope
 
-Protocol v1 covers the signed operation envelope and the unencrypted HTTP
-documents. It does not define:
+Protocol v1 covers the signed operation envelope, the unencrypted HTTP
+documents, and the decrypted payload shape. The client sync engine in
+`core-sync::engine` implements the outbox, push/pull, revisions, conflicts,
+cursors, and snapshots against a transport port. It does not define:
 
-- the decrypted payload schema identified by `payload_version` (`1`); it lands
-  with the client sync engine in P2.3;
 - the cryptographic algorithms and binary key formats; they are implemented in
   `core-crypto` and documented in [crypto.md](crypto.md);
-- outbox, conflict records, cursors, and restore behavior, which land in P2.3;
-- server implementation and deployment, which land in P2.4.
+- server implementation and deployment, which land in P2.4;
+- the HTTP transport adapter and client command wiring, which follow with the
+  server integration (P2.5) and the client shell (P3.1).
 
-The server never needs the payload schema: it validates the envelope, verifies
+The server never needs the payload shape: it validates the envelope, verifies
 the signature, assigns a sequence, and stores ciphertext and routing metadata.
 
 ## Versioning
@@ -121,6 +122,38 @@ The schema encodes this matrix with conditionals, and `core-sync` enforces the
 same matrix in `OperationEnvelope::validate` and
 `EntityType::allowed_operations`.
 
+## Payload v1
+
+The decrypted payload is the export v1 entity object for the envelope's
+`entity_type`, serialized as compact JSON. It does not include the export
+document wrapper. The authoritative entity shapes are the `$defs` in
+`contracts/export/v1/export.schema.json`:
+
+| `entity_type` | Export schema definition |
+| --- | --- |
+| `account` | `$defs.account` |
+| `account_group` | `$defs.accountGroup` |
+| `category` | `$defs.category` |
+| `category_group` | `$defs.categoryGroup` |
+| `counterparty` | `$defs.counterparty` |
+| `exchange_rate` | `$defs.exchangeRate` |
+| `ledger_profile` | `$defs.profile` |
+| `ledger_settings` | `$defs.settings` |
+| `note_preset` | `$defs.notePreset` |
+| `reconciliation_flag` | `$defs.reconciliationFlag` |
+| `tag` | `$defs.tag` |
+| `transaction` | `$defs.transaction` |
+
+`core_application::sync_payload` converts between domain aggregates and these
+objects. A payload that is malformed, fails domain validation, or describes a
+different entity than the envelope is rejected before the store is touched.
+Payload v1 accepts only currency-scale policy version 1; unknown currencies and
+mismatched currency scales are rejected.
+
+The payload is encrypted with the ledger data key and bound to the envelope's
+ledger, entity, operation, base revision, and key version; the binary details
+are in [crypto.md](crypto.md).
+
 ## Limits
 
 | Limit | Value | Enforcement |
@@ -183,6 +216,14 @@ and never logs tokens or ciphertext bodies.
 - Retries reuse the same `op_id` and `idempotency_key` with exponential backoff
   and jitter.
 
+### Local changes
+
+A local mutation is recorded through `SyncEngine::record_local_change`, which
+saves the entity, advances its revision, encrypts and signs the payload, and
+inserts the outbox row in one store transaction. A direct repository write
+bypasses sync: the client command layer must use the engine boundary so the
+local state and its operation commit together.
+
 ### Errors and retries
 
 Errors use `$defs.error`: `{ code, message, retryable, details }`. `code` is a
@@ -200,6 +241,17 @@ stores metadata and returns short-lived object-storage URLs; it never receives
 the plaintext or a decryption key. A restore downloads and verifies the hash,
 decrypts locally, imports into a fresh database, sets the cursor to the snapshot
 sequence, and pulls later operations.
+
+The encrypted snapshot payload is version 1. It contains the export document,
+the ledger identity, the local schema version, the covered server sequence, and
+every tracked entity revision. The blob format and associated data are in
+[crypto.md](crypto.md). `SyncEngine::create_snapshot` and
+`SyncEngine::restore_snapshot` implement creation and restore; the server-facing
+upload API is part of `/v1`. Restore is intended for a fresh database: the
+engine restores entities one by one, so a failed restore must discard and
+recreate the database rather than reuse a partial import. Snapshot creation
+requires a drained outbox, and the client must not run local writes while the
+export and revision set are captured.
 
 ## Conformance
 
@@ -238,10 +290,15 @@ patterns, not outputs of a production key.
 
 ## Compatibility with the rest of the core
 
-- `core-sync` owns the protocol types and performs no I/O.
-- `core-crypto` (P2.2) produces and verifies signatures and encrypts payloads;
-  it uses the sizes and canonicalization above.
-- `core-persistence` (P2.3) adds the outbox, cursor, and conflict tables by a
-  forward migration; schema v1 does not contain them.
+- `core-sync` owns the protocol types and the client sync engine. The engine is
+  I/O-free; `SyncTransport` is implemented by the clients' HTTP adapter and by
+  test servers.
+- `core-application` owns the payload codec that maps domain aggregates to the
+  export v1 entity objects.
+- `core-crypto` (P2.2) produces and verifies signatures and encrypts payloads
+  and snapshots; it uses the sizes and canonicalization above.
+- `core-persistence` (P2.3) adds the outbox, entity revision, applied
+  operation, cursor, conflict, and sync-state tables as schema v2. A schema v1
+  database is backed up to `<database>.backup-v1`, verified, and then migrated.
 - `bluewhale_server` (P2.4) copies `contracts/sync/v1` with provenance and
   pins `PROTOCOL_VERSION`; it never consumes a core crate.

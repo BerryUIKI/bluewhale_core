@@ -39,4 +39,4 @@ python -I scripts/check_contracts.py
 
 The Rust tests validate and round-trip every fixture through the `core-sync` types. The Python check is language-neutral and also validates the schemas, manifest hashes, fixture expectations, and the OpenAPI document.
 
-The encrypted payload schema identified by `payload_version` is not part of P2.1; it lands with the client sync engine. The server never reads payloads.
+The encrypted payload schema identified by `payload_version` is not a separate document in P2.1; from P2.3 it is the export v1 entity object for the envelope's entity type, implemented by `core-application` and documented in `docs/reference/sync-protocol.md`. The server never reads payloads.
