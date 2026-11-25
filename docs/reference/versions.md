@@ -8,6 +8,7 @@ This table records the version identity of each public contract. A change to any
 | Local SQLite schema | `1` | Active since P1.6 | `core-persistence` migrations and `SCHEMA_VERSION` |
 | Sync protocol | `1` | Active since P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
 | Export schema | `1` | Active since P1.7 | `contracts/export/v1` and `EXPORT_VERSION` in `core-application` |
+| Crypto key formats | `1` | Active since P2.2 | `core-crypto` format constants and `docs/reference/crypto.md` |
 | HTTP API | `/v1` | Contract published in P2.1; server implementation planned for P2.4 | `contracts/sync/v1/openapi.yaml` |
 | Rust | `1.97.1` | Active | `rust-toolchain.toml`; MSRV `1.97.1` |
 | Node / pnpm | `24.15.0` / `11.18.0` | Active for clients | `.node-version`, `package.json` |

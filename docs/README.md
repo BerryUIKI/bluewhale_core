@@ -24,6 +24,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Development | [licensing.md](development/licensing.md) | Active |
 | Reference | [versions.md](reference/versions.md) | Active |
 | Reference | [sync-protocol.md](reference/sync-protocol.md) | Active since P2.1 |
+| Reference | [crypto.md](reference/crypto.md) | Active since P2.2 |
 | Reference | [export-format.md](reference/export-format.md) | Active |
 | Reference | [apple-provenance.md](reference/apple-provenance.md) | Active |
 | Decisions | [adr/README.md](adr/README.md) | Template and index |

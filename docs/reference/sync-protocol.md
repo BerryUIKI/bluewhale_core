@@ -15,9 +15,8 @@ documents. It does not define:
 
 - the decrypted payload schema identified by `payload_version` (`1`); it lands
   with the client sync engine in P2.3;
-- the cryptographic algorithms' concrete formats beyond the sizes in the
-  schema (Argon2id parameters, key wrapping, AEAD cipher, recovery key), which
-  land with `core-crypto` in P2.2;
+- the cryptographic algorithms and binary key formats; they are implemented in
+  `core-crypto` and documented in [crypto.md](crypto.md);
 - outbox, conflict records, cursors, and restore behavior, which land in P2.3;
 - server implementation and deployment, which land in P2.4.
 
@@ -100,7 +99,11 @@ omitted. The signed object is the one on the wire, including `ciphertext`,
 re-serialized from decoded values. The device signs with its Ed25519 private
 key, and the server verifies with the registered `signing_public_key`.
 
-P2.2 records test vectors and the exact verification procedure.
+P2.2 implements this procedure: `OperationEnvelope::signing_bytes()` produces
+the canonical input, `core-crypto`'s `DeviceSigningKey` signs it, and
+`DeviceVerifyingKey` verifies it. The formats and test vectors are in
+[crypto.md](crypto.md), and `crates/core-sync/tests/signing.rs` signs and
+verifies an envelope end-to-end.
 
 ### Entity and operation matrix
 

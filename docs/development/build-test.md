@@ -31,7 +31,7 @@ The exact feature commands are added with the features themselves. P1.6 ships SQ
 - Sync protocol contract tests live in `crates/core-sync/tests/contract.rs`: they validate every fixture against `contracts/sync/v1/sync.schema.json`, verify the manifest SHA-256 values, round-trip every valid document through the `core-sync` types, and enforce the envelope rules in Rust.
 - `scripts/check_contracts.py` is the language-neutral check: it validates every contract schema, the fixture manifest and expectations, and the OpenAPI document after bundling its relative schema references. It requires `jsonschema`, `PyYAML`, and `openapi-spec-validator`.
 - `tests/integration` (planned) exercises use cases over a real temporary SQLCipher database and runs the sync convergence tests.
-- Crypto known-answer tests live in `crates/core-crypto/tests/vectors.rs` once the vectors are recorded in P1.0.
+- Crypto known-answer tests live in `crates/core-crypto/tests/vectors.rs` and cover RFC 8032 Ed25519, RFC 7748 X25519, RFC 8439 ChaCha20-Poly1305, and Argon2id. The version 1 Argon2id answer and timing test is ignored by default; run it in release with `cargo test -p core-crypto --release --test vectors argon2id_version_one -- --ignored --nocapture`. The formats and recorded timings are in [crypto.md](../reference/crypto.md).
 
 ## Windows
 

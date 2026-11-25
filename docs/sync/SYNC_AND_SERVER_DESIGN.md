@@ -17,6 +17,8 @@ Decisions **D4.1–D4.10** are accepted as recommended. Approval authorizes R5 d
 
 Revision note (2026-11-25): P2.1 publishes the version 1 contract in `contracts/sync/v1`. The envelope table below listed nine entity types; version 1 also carries `account_group`, `reconciliation_flag`, and `note_preset`, which are part of the approved R3 data model and must synchronize. Version 1 documents are closed objects, so a new field or enum value in an existing document requires a new protocol version; new endpoints remain additive within `/v1`. `docs/reference/sync-protocol.md` records the encodings, operation-type matrix, limits, signature canonicalization, and conformance procedure.
 
+Revision note (2026-11-25, P2.2): `core-crypto` implements the key hierarchy with Argon2id (64 MiB, 3 iterations, one lane), ChaCha20-Poly1305, X25519 with HKDF-SHA256, and Ed25519. The key record, wrapped LDK, and recovery envelope are 89, 93, and 61 bytes; the recovery key uses Crockford Base32 with a 20-bit checksum. `docs/reference/crypto.md` records the formats, test vectors, and host timing.
+
 ## 1. Goals and non-goals
 
 Goals:

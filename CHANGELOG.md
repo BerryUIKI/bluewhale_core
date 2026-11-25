@@ -32,6 +32,10 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Protocol types in `core-sync`: `PROTOCOL_VERSION`, `PAYLOAD_VERSION`, batch and size limits, `OperationEnvelope` with v1 validation, the entity/operation matrix, and typed HTTP documents for authentication, devices, ledgers, push/pull/ack, snapshots, and errors.
 - A language-neutral contract checker, `scripts/check_contracts.py`, and a CI job that validate the contract schemas, fixture hashes and expectations, and the OpenAPI document after bundling its relative schema references.
 - Sync protocol reference in `docs/reference/sync-protocol.md`, covering versioning, encodings, envelope semantics, limits, the API surface, signature canonicalization, and conformance.
+- Cryptographic primitives in `core-crypto`: Argon2id passphrase key derivation and key records, a random UMK, per-ledger data-key wrapping with X25519, HKDF-SHA256, and ChaCha20-Poly1305, Ed25519 device signing keys, and a Crockford-encoded recovery key with its envelope.
+- Known-answer tests for Ed25519 (RFC 8032), X25519 (RFC 7748), ChaCha20-Poly1305 (RFC 8439), and Argon2id, plus key-record, recovery-code, tamper, and key-rotation tests and a measured version 1 Argon2id timing.
+- `OperationEnvelope::signing_bytes()` in `core-sync`, producing the RFC 8785 canonical signing input, with an end-to-end sign/verify test against `core-crypto`.
+- Crypto reference in `docs/reference/crypto.md`, covering algorithms, parameters, binary key formats, recovery-key encoding, signature procedure, vectors, and residual risks.
 
 ### Changed
 

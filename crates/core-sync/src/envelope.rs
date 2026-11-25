@@ -291,6 +291,50 @@ impl OperationEnvelope {
 
         Ok(())
     }
+
+    /// Returns the RFC 8785 canonical JSON used as the Ed25519 signing input.
+    ///
+    /// The object keys are sorted, the encoding is compact, and the
+    /// `signature` field is omitted. Sign these bytes with the device signing
+    /// key and verify them with the registered public key.
+    #[must_use]
+    pub fn signing_bytes(&self) -> Vec<u8> {
+        let mut output = String::with_capacity(512);
+        let mut first = true;
+        output.push('{');
+
+        push_member_name(&mut output, &mut first, "base_revision");
+        output.push_str(&self.base_revision.to_string());
+        push_member_name(&mut output, &mut first, "ciphertext");
+        push_json_string(&mut output, &self.ciphertext);
+        push_member_name(&mut output, &mut first, "client_timestamp");
+        output.push_str(&self.client_timestamp.to_string());
+        push_member_name(&mut output, &mut first, "device_id");
+        push_json_string(&mut output, &self.device_id.to_string());
+        push_member_name(&mut output, &mut first, "entity_id");
+        push_json_string(&mut output, &self.entity_id.to_string());
+        push_member_name(&mut output, &mut first, "entity_type");
+        push_json_string(&mut output, self.entity_type.as_str());
+        push_member_name(&mut output, &mut first, "idempotency_key");
+        push_json_string(&mut output, &self.idempotency_key.to_string());
+        push_member_name(&mut output, &mut first, "key_version");
+        output.push_str(&self.key_version.to_string());
+        push_member_name(&mut output, &mut first, "ledger_id");
+        push_json_string(&mut output, &self.ledger_id.to_string());
+        push_member_name(&mut output, &mut first, "nonce");
+        push_json_string(&mut output, &self.nonce);
+        push_member_name(&mut output, &mut first, "op_id");
+        push_json_string(&mut output, &self.op_id.to_string());
+        push_member_name(&mut output, &mut first, "op_type");
+        push_json_string(&mut output, self.op_type.as_str());
+        push_member_name(&mut output, &mut first, "payload_version");
+        output.push_str(&self.payload_version.to_string());
+        push_member_name(&mut output, &mut first, "protocol_version");
+        output.push_str(&self.protocol_version.to_string());
+
+        output.push('}');
+        output.into_bytes()
+    }
 }
 
 /// A violation of the protocol v1 envelope rules.
@@ -363,6 +407,41 @@ impl fmt::Display for EnvelopeError {
 }
 
 impl std::error::Error for EnvelopeError {}
+
+/// Appends a comma-separated object member name and the colon.
+fn push_member_name(output: &mut String, first: &mut bool, name: &str) {
+    if !*first {
+        output.push(',');
+    }
+    *first = false;
+    output.push('"');
+    output.push_str(name);
+    output.push_str("\":");
+}
+
+/// Appends a JSON string with the escaping required by RFC 8785.
+fn push_json_string(output: &mut String, value: &str) {
+    output.push('"');
+    for character in value.chars() {
+        match character {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\u{08}' => output.push_str("\\b"),
+            '\t' => output.push_str("\\t"),
+            '\n' => output.push_str("\\n"),
+            '\u{0c}' => output.push_str("\\f"),
+            '\r' => output.push_str("\\r"),
+            control if control <= '\u{1f}' => {
+                let code = u32::from(control);
+                output.push_str("\\u00");
+                output.push(char::from_digit(code >> 4, 16).expect("a hex digit"));
+                output.push(char::from_digit(code & 0x0f, 16).expect("a hex digit"));
+            }
+            other => output.push(other),
+        }
+    }
+    output.push('"');
+}
 
 /// Returns the decoded length of unpadded base64url text, or `None` when the
 /// text is not canonical base64url.
@@ -622,5 +701,39 @@ mod tests {
         for error in errors {
             assert!(!error.to_string().is_empty(), "{error:?}");
         }
+    }
+
+    #[test]
+    fn signing_bytes_are_canonical() {
+        let bytes = envelope().signing_bytes();
+        let text = std::str::from_utf8(&bytes).unwrap();
+        assert_eq!(
+            text,
+            concat!(
+                r#"{"base_revision":4,"#,
+                r#""ciphertext":"Ymx1ZXdoYWxlIHN5bnRoZXRpYyBjaXBoZXJ0ZXh0","#,
+                r#""client_timestamp":1795000000000,"#,
+                r#""device_id":"0199c0f0-0000-7000-8000-000000000002","#,
+                r#""entity_id":"0199c0f0-0000-7000-8000-000000000020","#,
+                r#""entity_type":"transaction","#,
+                r#""idempotency_key":"0199c0f0-0000-7000-8000-000000000011","#,
+                r#""key_version":1,"#,
+                r#""ledger_id":"0199c0f0-0000-7000-8000-000000000001","#,
+                r#""nonce":"AAECAwQFBgcICQoL","#,
+                r#""op_id":"0199c0f0-0000-7000-8000-000000000010","#,
+                r#""op_type":"upsert","#,
+                r#""payload_version":1,"#,
+                r#""protocol_version":1}"#
+            )
+        );
+        assert!(!text.contains("signature"));
+    }
+
+    #[test]
+    fn signing_bytes_escape_json_strings() {
+        let mut candidate = envelope();
+        candidate.ciphertext = "a\"b\\c\n\u{01}".to_string();
+        let text = String::from_utf8(candidate.signing_bytes()).unwrap();
+        assert!(text.contains(r#""ciphertext":"a\"b\\c\n\u0001""#), "{text}");
     }
 }
