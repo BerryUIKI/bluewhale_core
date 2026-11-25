@@ -14,14 +14,17 @@ use core_domain::{
     LedgerProfile, LedgerProfileId, LedgerProfileRepository, LedgerReadSnapshot,
     LedgerReadSnapshotRepository, LedgerSettings, LedgerSettingsId, LedgerSettingsRepository,
     LedgerTag, Money, ReconciliationFlag, ReconciliationFlagId, ReconciliationFlagOptions,
-    ReconciliationFlagRepository, ReconciliationFlagSystemKind, RepositoryError, TagId, TagOptions,
-    TagRepository, Transaction, TransactionFields, TransactionId, TransactionKind,
-    TransactionNotePreset, TransactionNotePresetId, TransactionNotePresetRepository,
-    TransactionNotePresetValidationError, TransactionRepository, TransactionValidationError,
+    ReconciliationFlagRepository, ReconciliationFlagSystemKind, RepositoryError, SyncConflict,
+    SyncConflictResolution, SyncEntity, SyncEntityType, SyncOperation, SyncOperationType,
+    SyncRepository, TagId, TagOptions, TagRepository, Transaction, TransactionFields,
+    TransactionId, TransactionKind, TransactionNotePreset, TransactionNotePresetId,
+    TransactionNotePresetRepository, TransactionNotePresetValidationError, TransactionRepository,
+    TransactionValidationError,
 };
 use jiff::Timestamp;
 use rusqlite::types::FromSql;
 use rusqlite::{Connection, Row, RowIndex, params};
+use uuid::Uuid;
 
 use crate::database::{LedgerDatabase, to_repository_error};
 
@@ -1543,4 +1546,596 @@ impl LedgerReadSnapshotRepository for SqliteLedger {
             exchange_rates,
         })
     }
+}
+
+impl SyncRepository for SqliteLedger {
+    fn cursor(&self) -> Result<u64, RepositoryError> {
+        let connection = self.database.connection()?;
+        let value: i64 = connection
+            .query_row(
+                "SELECT COALESCE((SELECT applied_seq FROM sync_cursor WHERE singleton = 1), 0)",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(to_repository_error)?;
+        u64_from_i64(value, "applied_seq")
+    }
+
+    fn save_cursor(&self, seq: u64) -> Result<(), RepositoryError> {
+        let connection = self.database.connection()?;
+        connection
+            .execute(
+                "INSERT INTO sync_cursor (singleton, applied_seq) VALUES (1, ?1)
+                 ON CONFLICT(singleton) DO UPDATE SET
+                     applied_seq = MAX(sync_cursor.applied_seq, excluded.applied_seq)",
+                params![i64_from_u64(seq, "applied_seq")?],
+            )
+            .map_err(to_repository_error)?;
+        Ok(())
+    }
+
+    fn pending_operations(&self, limit: usize) -> Result<Vec<SyncOperation>, RepositoryError> {
+        let connection = self.database.connection()?;
+        let limit =
+            i64::try_from(limit).map_err(|_| RepositoryError::new("outbox limit exceeds i64"))?;
+        let mut statement = connection
+            .prepare(
+                "SELECT op_id, ledger_id, device_id, entity_type, entity_id, op_type,
+                        base_revision, client_timestamp, idempotency_key, key_version, nonce,
+                        ciphertext, payload_version, signature
+                 FROM outbox_operations
+                 WHERE server_seq IS NULL
+                 ORDER BY created_at ASC, op_id ASC
+                 LIMIT ?1",
+            )
+            .map_err(to_repository_error)?;
+        let mut rows = statement.query([limit]).map_err(to_repository_error)?;
+        let mut operations = Vec::new();
+        while let Some(row) = rows.next().map_err(to_repository_error)? {
+            operations.push(sync_operation_from_row(row)?);
+        }
+        Ok(operations)
+    }
+
+    fn mark_operations_sent(&self, accepted: &[(Uuid, u64)]) -> Result<(), RepositoryError> {
+        let mut connection = self.database.connection()?;
+        let transaction = connection.transaction().map_err(to_repository_error)?;
+        for (op_id, seq) in accepted {
+            let updated = transaction
+                .execute(
+                    "UPDATE outbox_operations SET server_seq = ?2
+                     WHERE op_id = ?1 AND (server_seq IS NULL OR server_seq = ?2)",
+                    params![op_id.to_string(), i64_from_u64(*seq, "server_seq")?],
+                )
+                .map_err(to_repository_error)?;
+            if updated != 1 {
+                return Err(RepositoryError::new(
+                    "outbox operation is missing or has a conflicting sequence",
+                ));
+            }
+            let (entity_type, entity_id): (String, String) = transaction
+                .query_row(
+                    "SELECT entity_type, entity_id FROM outbox_operations WHERE op_id = ?1",
+                    [op_id.to_string()],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .map_err(to_repository_error)?;
+            let entity_type = SyncEntityType::parse(&entity_type)
+                .ok_or_else(|| RepositoryError::new("unknown sync entity type"))?;
+            let entity_id = parse_sync_uuid(entity_id, "entity_id")?;
+            set_sync_server_seq(&transaction, entity_type, entity_id, *seq)?;
+        }
+        transaction.commit().map_err(to_repository_error)
+    }
+
+    fn is_operation_known(&self, op_id: Uuid) -> Result<bool, RepositoryError> {
+        let connection = self.database.connection()?;
+        let known: i64 = connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM outbox_operations WHERE op_id = ?1)
+                     OR EXISTS(SELECT 1 FROM sync_applied_operations WHERE op_id = ?1)",
+                [op_id.to_string()],
+                |row| row.get(0),
+            )
+            .map_err(to_repository_error)?;
+        Ok(known != 0)
+    }
+
+    fn entity_revision(
+        &self,
+        entity_type: SyncEntityType,
+        entity_id: Uuid,
+    ) -> Result<u64, RepositoryError> {
+        let connection = self.database.connection()?;
+        let value: i64 = connection
+            .query_row(
+                "SELECT COALESCE((SELECT revision FROM sync_entity_state
+                                  WHERE entity_type = ?1 AND entity_id = ?2), 0)",
+                params![entity_type.as_str(), entity_id.to_string()],
+                |row| row.get(0),
+            )
+            .map_err(to_repository_error)?;
+        u64_from_i64(value, "revision")
+    }
+
+    fn entity_server_seq(
+        &self,
+        entity_type: SyncEntityType,
+        entity_id: Uuid,
+    ) -> Result<u64, RepositoryError> {
+        let connection = self.database.connection()?;
+        let value: i64 = connection
+            .query_row(
+                "SELECT COALESCE((SELECT last_server_seq FROM sync_entity_state
+                                  WHERE entity_type = ?1 AND entity_id = ?2), 0)",
+                params![entity_type.as_str(), entity_id.to_string()],
+                |row| row.get(0),
+            )
+            .map_err(to_repository_error)?;
+        u64_from_i64(value, "last_server_seq")
+    }
+
+    fn load_entity(
+        &self,
+        entity_type: SyncEntityType,
+        entity_id: Uuid,
+    ) -> Result<Option<SyncEntity>, RepositoryError> {
+        let connection = self.database.connection()?;
+        let id = entity_id.to_string();
+        match entity_type {
+            SyncEntityType::Account => load_single(
+                &connection,
+                "SELECT * FROM accounts WHERE id = ?1",
+                &id,
+                |row| map_account(&connection, row).map(SyncEntity::Account),
+            ),
+            SyncEntityType::AccountGroup => load_single(
+                &connection,
+                "SELECT * FROM account_groups WHERE id = ?1",
+                &id,
+                |row| map_account_group(row).map(SyncEntity::AccountGroup),
+            ),
+            SyncEntityType::Category => load_single(
+                &connection,
+                "SELECT * FROM categories WHERE id = ?1",
+                &id,
+                |row| map_category(row).map(SyncEntity::Category),
+            ),
+            SyncEntityType::CategoryGroup => load_single(
+                &connection,
+                "SELECT * FROM category_groups WHERE id = ?1",
+                &id,
+                |row| map_category_group(row).map(SyncEntity::CategoryGroup),
+            ),
+            SyncEntityType::Counterparty => load_single(
+                &connection,
+                "SELECT * FROM counterparties WHERE id = ?1",
+                &id,
+                |row| map_counterparty(row).map(SyncEntity::Counterparty),
+            ),
+            SyncEntityType::ExchangeRate => load_single(
+                &connection,
+                "SELECT * FROM exchange_rates WHERE id = ?1",
+                &id,
+                |row| map_exchange_rate(row).map(SyncEntity::ExchangeRate),
+            ),
+            SyncEntityType::LedgerProfile => load_single(
+                &connection,
+                "SELECT * FROM profile WHERE id = ?1",
+                &id,
+                |row| map_profile(row).map(SyncEntity::LedgerProfile),
+            ),
+            SyncEntityType::LedgerSettings => load_single(
+                &connection,
+                "SELECT * FROM settings WHERE id = ?1",
+                &id,
+                |row| map_settings(row).map(SyncEntity::LedgerSettings),
+            ),
+            SyncEntityType::NotePreset => load_single(
+                &connection,
+                "SELECT * FROM note_presets WHERE id = ?1",
+                &id,
+                |row| map_note_preset(row).map(SyncEntity::NotePreset),
+            ),
+            SyncEntityType::ReconciliationFlag => load_single(
+                &connection,
+                "SELECT * FROM reconciliation_flags WHERE id = ?1",
+                &id,
+                |row| map_reconciliation_flag(row).map(SyncEntity::ReconciliationFlag),
+            ),
+            SyncEntityType::Tag => load_single(
+                &connection,
+                "SELECT * FROM tags WHERE id = ?1",
+                &id,
+                |row| map_tag(row).map(SyncEntity::Tag),
+            ),
+            SyncEntityType::Transaction => load_single(
+                &connection,
+                "SELECT * FROM transactions WHERE id = ?1",
+                &id,
+                |row| map_transaction(&connection, row).map(SyncEntity::Transaction),
+            ),
+        }
+    }
+
+    fn record_local_change(
+        &self,
+        entity: &SyncEntity,
+        operation: &SyncOperation,
+        revision: u64,
+    ) -> Result<(), RepositoryError> {
+        require_operation_matches_entity(operation, entity)?;
+        if operation.server_seq.is_some() {
+            return Err(RepositoryError::new(
+                "a local change cannot already have a server sequence",
+            ));
+        }
+        let mut connection = self.database.connection()?;
+        let transaction = connection.transaction().map_err(to_repository_error)?;
+        upsert_sync_entity(&transaction, entity)?;
+        insert_outbox_operation(&transaction, operation)?;
+        set_sync_revision(
+            &transaction,
+            operation.entity_type,
+            operation.entity_id,
+            revision,
+        )?;
+        transaction.commit().map_err(to_repository_error)
+    }
+
+    fn apply_remote_change(
+        &self,
+        entity: &SyncEntity,
+        operation: &SyncOperation,
+        revision: u64,
+        conflict: Option<&SyncConflict>,
+    ) -> Result<(), RepositoryError> {
+        require_operation_matches_entity(operation, entity)?;
+        let Some(seq) = operation.server_seq else {
+            return Err(RepositoryError::new(
+                "a remote operation must have a server sequence",
+            ));
+        };
+        if let Some(conflict) = conflict
+            && (conflict.entity_type != operation.entity_type
+                || conflict.entity_id != operation.entity_id
+                || conflict.remote_op_id != operation.op_id)
+        {
+            return Err(RepositoryError::new(
+                "conflict does not match the remote operation",
+            ));
+        }
+        let mut connection = self.database.connection()?;
+        let transaction = connection.transaction().map_err(to_repository_error)?;
+        upsert_sync_entity(&transaction, entity)?;
+        set_sync_revision(
+            &transaction,
+            operation.entity_type,
+            operation.entity_id,
+            revision,
+        )?;
+        set_sync_server_seq(
+            &transaction,
+            operation.entity_type,
+            operation.entity_id,
+            seq,
+        )?;
+        transaction
+            .execute(
+                "INSERT INTO sync_applied_operations (op_id, server_seq) VALUES (?1, ?2)",
+                params![
+                    operation.op_id.to_string(),
+                    i64_from_u64(seq, "server_seq")?
+                ],
+            )
+            .map_err(to_repository_error)?;
+        if let Some(conflict) = conflict {
+            insert_sync_conflict(&transaction, conflict)?;
+        }
+        transaction.commit().map_err(to_repository_error)
+    }
+
+    fn restore_entity(
+        &self,
+        entity: &SyncEntity,
+        revision: u64,
+        server_seq: u64,
+    ) -> Result<(), RepositoryError> {
+        let mut connection = self.database.connection()?;
+        let transaction = connection.transaction().map_err(to_repository_error)?;
+        upsert_sync_entity(&transaction, entity)?;
+        set_sync_revision(
+            &transaction,
+            entity.entity_type(),
+            entity.entity_id(),
+            revision,
+        )?;
+        set_sync_server_seq(
+            &transaction,
+            entity.entity_type(),
+            entity.entity_id(),
+            server_seq,
+        )?;
+        transaction.commit().map_err(to_repository_error)
+    }
+
+    fn entity_revisions(&self) -> Result<Vec<(SyncEntityType, Uuid, u64)>, RepositoryError> {
+        let connection = self.database.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT entity_type, entity_id, revision FROM sync_entity_state
+                 ORDER BY entity_type ASC, entity_id ASC",
+            )
+            .map_err(to_repository_error)?;
+        let mut rows = statement.query([]).map_err(to_repository_error)?;
+        let mut revisions = Vec::new();
+        while let Some(row) = rows.next().map_err(to_repository_error)? {
+            let entity_type = SyncEntityType::parse(&row.get_value::<_, String>(0)?)
+                .ok_or_else(|| RepositoryError::new("unknown sync entity type"))?;
+            revisions.push((
+                entity_type,
+                parse_sync_uuid(row.get_value::<_, String>(1)?, "entity_id")?,
+                u64_from_i64(row.get_value(2)?, "revision")?,
+            ));
+        }
+        Ok(revisions)
+    }
+
+    fn conflicts(&self) -> Result<Vec<SyncConflict>, RepositoryError> {
+        let connection = self.database.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, entity_type, entity_id, local_payload, remote_op_id,
+                        local_revision, remote_base_revision, detected_at, resolution, resolved_at
+                 FROM sync_conflicts
+                 ORDER BY detected_at ASC, id ASC",
+            )
+            .map_err(to_repository_error)?;
+        let mut rows = statement.query([]).map_err(to_repository_error)?;
+        let mut conflicts = Vec::new();
+        while let Some(row) = rows.next().map_err(to_repository_error)? {
+            conflicts.push(sync_conflict_from_row(row)?);
+        }
+        Ok(conflicts)
+    }
+
+    fn resolve_conflict(
+        &self,
+        conflict_id: Uuid,
+        resolution: SyncConflictResolution,
+        at: Timestamp,
+    ) -> Result<(), RepositoryError> {
+        let connection = self.database.connection()?;
+        let updated = connection
+            .execute(
+                "UPDATE sync_conflicts SET resolution = ?2, resolved_at = ?3
+                 WHERE id = ?1 AND resolution IS NULL",
+                params![
+                    conflict_id.to_string(),
+                    resolution.as_str(),
+                    timestamp_milliseconds(at)
+                ],
+            )
+            .map_err(to_repository_error)?;
+        if updated == 1 {
+            Ok(())
+        } else {
+            Err(RepositoryError::new(
+                "conflict not found or already resolved",
+            ))
+        }
+    }
+}
+
+fn load_single<T>(
+    connection: &Connection,
+    sql: &str,
+    id: &str,
+    map: impl Fn(&Row<'_>) -> Result<T, RepositoryError>,
+) -> Result<Option<T>, RepositoryError> {
+    let mut statement = connection.prepare(sql).map_err(to_repository_error)?;
+    let mut rows = statement.query([id]).map_err(to_repository_error)?;
+    match rows.next().map_err(to_repository_error)? {
+        Some(row) => Ok(Some(map(row)?)),
+        None => Ok(None),
+    }
+}
+
+fn upsert_sync_entity(connection: &Connection, entity: &SyncEntity) -> Result<(), RepositoryError> {
+    match entity {
+        SyncEntity::Account(entity) => upsert_account(connection, entity),
+        SyncEntity::AccountGroup(entity) => upsert_account_group(connection, entity),
+        SyncEntity::Category(entity) => upsert_category(connection, entity),
+        SyncEntity::CategoryGroup(entity) => upsert_category_group(connection, entity),
+        SyncEntity::Counterparty(entity) => upsert_counterparty(connection, entity),
+        SyncEntity::ExchangeRate(entity) => upsert_exchange_rate(connection, entity),
+        SyncEntity::LedgerProfile(entity) => upsert_profile(connection, entity),
+        SyncEntity::LedgerSettings(entity) => upsert_settings(connection, entity),
+        SyncEntity::NotePreset(entity) => upsert_note_preset(connection, entity),
+        SyncEntity::ReconciliationFlag(entity) => upsert_reconciliation_flag(connection, entity),
+        SyncEntity::Tag(entity) => upsert_tag(connection, entity),
+        SyncEntity::Transaction(entity) => upsert_transaction(connection, entity),
+    }
+}
+
+fn require_operation_matches_entity(
+    operation: &SyncOperation,
+    entity: &SyncEntity,
+) -> Result<(), RepositoryError> {
+    if operation.entity_type != entity.entity_type() || operation.entity_id != entity.entity_id() {
+        return Err(RepositoryError::new(
+            "operation does not match its entity aggregate",
+        ));
+    }
+    Ok(())
+}
+
+fn insert_outbox_operation(
+    connection: &Connection,
+    operation: &SyncOperation,
+) -> Result<(), RepositoryError> {
+    connection
+        .execute(
+            "INSERT INTO outbox_operations (
+                 op_id, ledger_id, device_id, entity_type, entity_id, op_type, base_revision,
+                 client_timestamp, idempotency_key, key_version, nonce, ciphertext,
+                 payload_version, signature, server_seq, created_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            params![
+                operation.op_id.to_string(),
+                operation.ledger_id.to_string(),
+                operation.device_id.to_string(),
+                operation.entity_type.as_str(),
+                operation.entity_id.to_string(),
+                operation.op_type.as_str(),
+                i64_from_u64(operation.base_revision, "base_revision")?,
+                operation.client_timestamp,
+                operation.idempotency_key.to_string(),
+                i64::from(operation.key_version),
+                operation.nonce,
+                operation.ciphertext,
+                i64::from(operation.payload_version),
+                operation.signature,
+                operation
+                    .server_seq
+                    .map(|seq| i64_from_u64(seq, "server_seq"))
+                    .transpose()?,
+                operation.client_timestamp,
+            ],
+        )
+        .map_err(to_repository_error)?;
+    Ok(())
+}
+
+fn set_sync_revision(
+    connection: &Connection,
+    entity_type: SyncEntityType,
+    entity_id: Uuid,
+    revision: u64,
+) -> Result<(), RepositoryError> {
+    connection
+        .execute(
+            "INSERT INTO sync_entity_state (entity_type, entity_id, revision)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(entity_type, entity_id) DO UPDATE SET revision = excluded.revision",
+            params![
+                entity_type.as_str(),
+                entity_id.to_string(),
+                i64_from_u64(revision, "revision")?
+            ],
+        )
+        .map_err(to_repository_error)?;
+    Ok(())
+}
+
+fn set_sync_server_seq(
+    connection: &Connection,
+    entity_type: SyncEntityType,
+    entity_id: Uuid,
+    server_seq: u64,
+) -> Result<(), RepositoryError> {
+    connection
+        .execute(
+            "INSERT INTO sync_entity_state (entity_type, entity_id, revision, last_server_seq)
+             VALUES (?1, ?2, 0, ?3)
+             ON CONFLICT(entity_type, entity_id) DO UPDATE SET
+                 last_server_seq = MAX(sync_entity_state.last_server_seq, excluded.last_server_seq)",
+            params![
+                entity_type.as_str(),
+                entity_id.to_string(),
+                i64_from_u64(server_seq, "last_server_seq")?
+            ],
+        )
+        .map_err(to_repository_error)?;
+    Ok(())
+}
+
+fn insert_sync_conflict(
+    connection: &Connection,
+    conflict: &SyncConflict,
+) -> Result<(), RepositoryError> {
+    connection
+        .execute(
+            "INSERT INTO sync_conflicts (
+                 id, entity_type, entity_id, local_payload, remote_op_id, local_revision,
+                 remote_base_revision, detected_at, resolution, resolved_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                conflict.id.to_string(),
+                conflict.entity_type.as_str(),
+                conflict.entity_id.to_string(),
+                conflict.local_payload,
+                conflict.remote_op_id.to_string(),
+                i64_from_u64(conflict.local_revision, "local_revision")?,
+                i64_from_u64(conflict.remote_base_revision, "remote_base_revision")?,
+                timestamp_milliseconds(conflict.detected_at),
+                conflict.resolution.map(|resolution| resolution.as_str()),
+                conflict.resolved_at.map(timestamp_milliseconds),
+            ],
+        )
+        .map_err(to_repository_error)?;
+    Ok(())
+}
+
+fn sync_operation_from_row(row: &Row<'_>) -> Result<SyncOperation, RepositoryError> {
+    Ok(SyncOperation {
+        op_id: parse_sync_uuid(row.get_value::<_, String>(0)?, "op_id")?,
+        ledger_id: parse_sync_uuid(row.get_value::<_, String>(1)?, "ledger_id")?,
+        device_id: parse_sync_uuid(row.get_value::<_, String>(2)?, "device_id")?,
+        entity_type: SyncEntityType::parse(&row.get_value::<_, String>(3)?)
+            .ok_or_else(|| RepositoryError::new("unknown sync entity type"))?,
+        entity_id: parse_sync_uuid(row.get_value::<_, String>(4)?, "entity_id")?,
+        op_type: SyncOperationType::parse(&row.get_value::<_, String>(5)?)
+            .ok_or_else(|| RepositoryError::new("unknown sync operation type"))?,
+        base_revision: u64_from_i64(row.get_value(6)?, "base_revision")?,
+        client_timestamp: row.get_value(7)?,
+        idempotency_key: parse_sync_uuid(row.get_value::<_, String>(8)?, "idempotency_key")?,
+        key_version: u32::try_from(row.get_value::<_, i64>(9)?)
+            .map_err(|_| RepositoryError::new("invalid key_version"))?,
+        nonce: row.get_value(10)?,
+        ciphertext: row.get_value(11)?,
+        payload_version: u32::try_from(row.get_value::<_, i64>(12)?)
+            .map_err(|_| RepositoryError::new("invalid payload_version"))?,
+        signature: row.get_value(13)?,
+        server_seq: None,
+    })
+}
+
+fn sync_conflict_from_row(row: &Row<'_>) -> Result<SyncConflict, RepositoryError> {
+    let resolution = row
+        .get_value::<_, Option<String>>(8)?
+        .map(|value| {
+            SyncConflictResolution::parse(&value)
+                .ok_or_else(|| RepositoryError::new("unknown conflict resolution"))
+        })
+        .transpose()?;
+    Ok(SyncConflict {
+        id: parse_sync_uuid(row.get_value::<_, String>(0)?, "conflict id")?,
+        entity_type: SyncEntityType::parse(&row.get_value::<_, String>(1)?)
+            .ok_or_else(|| RepositoryError::new("unknown sync entity type"))?,
+        entity_id: parse_sync_uuid(row.get_value::<_, String>(2)?, "entity_id")?,
+        local_payload: row.get_value(3)?,
+        remote_op_id: parse_sync_uuid(row.get_value::<_, String>(4)?, "remote_op_id")?,
+        local_revision: u64_from_i64(row.get_value(5)?, "local_revision")?,
+        remote_base_revision: u64_from_i64(row.get_value(6)?, "remote_base_revision")?,
+        detected_at: timestamp_from_milliseconds(row.get_value(7)?)?,
+        resolution,
+        resolved_at: row
+            .get_value::<_, Option<i64>>(9)?
+            .map(timestamp_from_milliseconds)
+            .transpose()?,
+    })
+}
+
+fn parse_sync_uuid(value: String, field: &str) -> Result<Uuid, RepositoryError> {
+    Uuid::parse_str(&value)
+        .map_err(|error| RepositoryError::new(format!("invalid {field}: {error}")))
+}
+
+fn u64_from_i64(value: i64, field: &str) -> Result<u64, RepositoryError> {
+    u64::try_from(value).map_err(|_| RepositoryError::new(format!("invalid {field}: {value}")))
+}
+
+fn i64_from_u64(value: u64, field: &str) -> Result<i64, RepositoryError> {
+    i64::try_from(value).map_err(|_| RepositoryError::new(format!("{field} exceeds i64")))
 }

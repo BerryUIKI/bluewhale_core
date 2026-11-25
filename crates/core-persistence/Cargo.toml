@@ -11,7 +11,7 @@ repository.workspace = true
 [dependencies]
 core-domain.workspace = true
 jiff = "1.0.2"
-rusqlite = { version = "0.43.0", features = ["bundled-sqlcipher-vendored-openssl"] }
+rusqlite = { version = "0.43.0", features = ["backup", "bundled-sqlcipher-vendored-openssl"] }
 uuid = "1.29.3"
 
 [lints]

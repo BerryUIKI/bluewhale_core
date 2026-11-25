@@ -19,18 +19,20 @@ The workspace never runs `--all-features`. Features that change the storage back
 - Default: `bundled-sqlcipher` for `core-persistence`.
 - `unencrypted-sqlite` is reserved for the approved OS-encryption fallback and docs builds; it is mutually exclusive with SQLCipher and guarded by `compile_error!`.
 - `test-support` enables temporary-ledger helpers used by other crates' tests.
-- `http` enables the blocking sync transport in `core-sync`.
+- `http` is planned for the blocking client transport; the sync engine itself is transport-neutral and performs no I/O.
 
-The exact feature commands are added with the features themselves. P1.6 ships SQLCipher as the only storage backend; `unencrypted-sqlite` and `test-support` are not implemented yet. Until they are, the default workspace commands above are the complete set.
+The exact feature commands are added with the features themselves. P1.6 shipped SQLCipher as the only storage backend; `unencrypted-sqlite` and `test-support` are not implemented yet. P2.3 added schema v2 and the sync store. Until the remaining features land, the default workspace commands above are the complete set.
 
 ## Integration and migration tests
 
-- Schema v1 has no predecessor, so there is no prior-version fixture yet. `crates/core-persistence/tests/roundtrip.rs` covers opening a keyed database, reopening it, rejecting a wrong key, reading the recorded schema version, and round-tripping every persisted entity.
-- A migration fixture for each prior schema version is added with the first post-v1 migration, and it must assert that active, archived, and soft-deleted rows are preserved.
+- `crates/core-persistence/tests/roundtrip.rs` covers opening a keyed database, reopening it, rejecting a wrong key, reading the recorded schema version, and round-tripping every persisted entity.
+- `crates/core-persistence/tests/sync.rs` creates a schema v1 database fixture, opens it with the current build, verifies the `<database>.backup-v1` copy with `PRAGMA integrity_check`, migrates to schema v2, and checks that the v1 rows survive. It also round-trips the sync store: outbox, revisions, server sequences, cursor monotonicity, applied operations, conflicts, and snapshot-restore entities.
 - Export contract tests live in the `core-application` export module: they validate `contracts/export/v1/fixture.json` and exporter output against the JSON Schema and round-trip through the Rust document types.
+- The sync payload codec tests in `core-application/src/sync_payload.rs` convert every entity in the export fixture to a domain aggregate and back, and reject malformed payloads.
 - Sync protocol contract tests live in `crates/core-sync/tests/contract.rs`: they validate every fixture against `contracts/sync/v1/sync.schema.json`, verify the manifest SHA-256 values, round-trip every valid document through the `core-sync` types, and enforce the envelope rules in Rust.
+- Sync engine tests live in `crates/core-sync/tests/engine.rs`: two in-memory clients share a fake server and cover convergence, last-writer-wins for non-financial data, transaction conflicts and resolution, deletion and restore, offline retry, and snapshot restore followed by pull.
 - `scripts/check_contracts.py` is the language-neutral check: it validates every contract schema, the fixture manifest and expectations, and the OpenAPI document after bundling its relative schema references. It requires `jsonschema`, `PyYAML`, and `openapi-spec-validator`.
-- `tests/integration` (planned) exercises use cases over a real temporary SQLCipher database and runs the sync convergence tests.
+- `tests/integration` (planned) exercises use cases over a real temporary SQLCipher database and wires the client sync engine to the server transport.
 - Crypto known-answer tests live in `crates/core-crypto/tests/vectors.rs` and cover RFC 8032 Ed25519, RFC 7748 X25519, RFC 8439 ChaCha20-Poly1305, and Argon2id. The version 1 Argon2id answer and timing test is ignored by default; run it in release with `cargo test -p core-crypto --release --test vectors argon2id_version_one -- --ignored --nocapture`. The formats and recorded timings are in [crypto.md](../reference/crypto.md).
 
 ## Windows

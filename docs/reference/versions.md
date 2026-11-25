@@ -5,8 +5,10 @@ This table records the version identity of each public contract. A change to any
 | Component | Current version | Status | Source of truth |
 | --- | --- | --- | --- |
 | Public crates | `0.1.0` | Functional APIs, unpublished | Workspace `Cargo.toml` |
-| Local SQLite schema | `1` | Active since P1.6 | `core-persistence` migrations and `SCHEMA_VERSION` |
+| Local SQLite schema | `2` | Active since P2.3 (v1 since P1.6) | `core-persistence` migrations and `SCHEMA_VERSION` |
 | Sync protocol | `1` | Active since P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
+| Sync payload schema | `1` | Active since P2.3 | Export v1 entity objects and `core-application` `sync_payload` |
+| Sync snapshot format | `1` | Active since P2.3 | `core-sync` `SNAPSHOT_VERSION` and `docs/reference/crypto.md` |
 | Export schema | `1` | Active since P1.7 | `contracts/export/v1` and `EXPORT_VERSION` in `core-application` |
 | Crypto key formats | `1` | Active since P2.2 | `core-crypto` format constants and `docs/reference/crypto.md` |
 | HTTP API | `/v1` | Contract published in P2.1; server implementation planned for P2.4 | `contracts/sync/v1/openapi.yaml` |

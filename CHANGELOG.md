@@ -36,7 +36,12 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Known-answer tests for Ed25519 (RFC 8032), X25519 (RFC 7748), ChaCha20-Poly1305 (RFC 8439), and Argon2id, plus key-record, recovery-code, tamper, and key-rotation tests and a measured version 1 Argon2id timing.
 - `OperationEnvelope::signing_bytes()` in `core-sync`, producing the RFC 8785 canonical signing input, with an end-to-end sign/verify test against `core-crypto`.
 - Crypto reference in `docs/reference/crypto.md`, covering algorithms, parameters, binary key formats, recovery-key encoding, signature procedure, vectors, and residual risks.
+- The client sync engine in `core-sync`: atomic local outbox capture, encrypted and signed operation payloads, push/pull/ack, per-entity revisions and server sequences, idempotent replay, revision-gap detection, last-writer-wins for non-financial data, transaction conflict records and resolution, offline retry, and encrypted snapshot creation and restore.
+- Sync payload v1 in `core-application`: the export v1 entity object for each entity type, with conversions from every domain aggregate and validation through the domain constructors.
+- Local schema v2 in `core-persistence`: `outbox_operations`, `sync_entity_state`, `sync_applied_operations`, `sync_cursor`, `sync_conflicts`, and `sync_state`, with a verified `<database>.backup-v1` copy before migrating an existing schema v1 database.
+- Two-client sync engine tests covering convergence, last-writer-wins without conflicts, financial conflict preservation and resolution, deletion and restore, offline retry, and snapshot restore followed by pull; SQLCipher sync-store and v1-to-v2 migration tests.
 
 ### Changed
 
-- Repository status is pre-alpha. The Phase 0 spike is not complete and no crate is published yet.
+- The coverage gate now counts each instrumented source line once across generic and duplicate build instantiations. The 80% per-crate line threshold and 100% critical-module branch threshold are unchanged.
+- Repository status is pre-alpha. The Phase 0 spike is complete; no crate is published yet.

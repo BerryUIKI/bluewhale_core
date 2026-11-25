@@ -19,9 +19,10 @@ and the protocol envelope is in [sync-protocol.md](sync-protocol.md).
 - key versions and key-rotation primitives.
 
 It does not implement platform key storage (DPAPI or Android Keystore),
-SQLCipher key management, the outbox or payload encryption, server-side
-envelope storage, or client key-enrollment policy. Those land in P2.3, P2.4, and
-the client phases. It has no I/O and no network access.
+SQLCipher key management, the client outbox or payload policy (implemented in
+`core-sync` and `core-application`), server-side envelope storage, or client
+key-enrollment policy. Those land in P2.4 and the client phases. It has no I/O
+and no network access.
 
 ## Algorithms
 
@@ -175,6 +176,43 @@ canonical bytes from the envelope, decodes the signature, and calls
 `crates/core-sync/tests/signing.rs` signs and verifies a canonical envelope
 end-to-end.
 
+## Operation payloads and snapshots
+
+Operation payloads are the export v1 entity objects described in
+[sync-protocol.md](sync-protocol.md#payload-v1), serialized as compact JSON and
+encrypted with ChaCha20-Poly1305 under the ledger data key. Every operation uses
+a fresh 96-bit nonce. The AEAD associated data is:
+
+```text
+"bluewhale/operation-payload/v1" || ledger_id (16) || entity_type || 0x00
+    || entity_id (16) || op_type || 0x00 || base_revision (u64 BE)
+    || key_version (u32 BE)
+```
+
+The envelope carries the nonce and ciphertext as unpadded base64url, and its
+signature covers both. Binding the routing fields in the associated data
+prevents a valid payload from being moved to another envelope.
+
+A snapshot blob is:
+
+```text
+[format version 1 (1 byte)][nonce (12 bytes)][ciphertext]
+```
+
+The plaintext is a compact JSON document with `snapshot_version` (1), the ledger
+identity, the covered `server_seq`, the local `schema_version`, the export
+document, and the tracked entity revisions. Its associated data is:
+
+```text
+"bluewhale/snapshot/v1" || ledger_id (16) || server_seq (u64 BE)
+    || key_version (u32 BE)
+```
+
+The metadata stores the SHA-256 and size of the encrypted blob. Restore verifies
+the size and hash, decrypts with the recorded key version, checks the snapshot
+version, ledger identity, and local schema version, restores every entity and
+revision, and sets the cursor to the snapshot sequence.
+
 ## Randomness and nonces
 
 - Keys, salts, and nonces come from the operating system CSPRNG through
@@ -228,7 +266,7 @@ cargo test -p core-sync
 cargo llvm-cov -p core-crypto --summary-only
 ```
 
-Line coverage for `core-crypto` was 99.2% when measured on 2026-11-25; the
+Line coverage for `core-crypto` was 99.4% when measured on 2026-11-25; the
 recorded figure and the workspace gate are in [COVERAGE.md](../quality/COVERAGE.md).
 
 ## Residual risks
@@ -239,6 +277,6 @@ recorded figure and the workspace gate are in [COVERAGE.md](../quality/COVERAGE.
 - A revoked device can still decrypt operations it received before revocation
   and any LDK version it already held. Rotation protects future data, as stated
   in R4.
-- Payload encryption and the outbox are not wired yet; P2.3 uses these
-  primitives.
+- The blocking HTTP transport and client command wiring are not implemented;
+  P2.5 and P3.1 connect the sync engine to a server and the client shell.
 - No claim is made about FIPS 140 validation or post-quantum resistance.

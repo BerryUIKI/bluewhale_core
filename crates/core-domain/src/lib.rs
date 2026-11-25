@@ -20,6 +20,7 @@ pub mod reconciliation;
 pub mod repository;
 pub mod settings;
 pub mod statistics;
+pub mod sync;
 pub mod tag;
 pub mod transaction;
 pub mod validation;
@@ -67,6 +68,10 @@ pub use repository::{
 };
 pub use settings::{LedgerCalendarIdentifier, LedgerSettings};
 pub use statistics::{MonthlyStatistics, MonthlyStatisticsError, monthly_statistics};
+pub use sync::{
+    SyncConflict, SyncConflictResolution, SyncEntity, SyncEntityType, SyncOperation,
+    SyncOperationType, SyncRepository,
+};
 pub use tag::{LedgerTag, TagOptions, TagValidationError};
 pub use transaction::{
     Transaction, TransactionFields, TransactionKind, TransactionValidationError,

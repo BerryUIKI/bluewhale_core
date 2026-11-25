@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Enforce the P1.8 coverage gates from a cargo-llvm-cov JSON export.
 
-Line coverage must be at least 80% for each public core crate. With
-``--branch``, the critical modules must have 100% branch coverage.
+Line coverage must be at least 80% for each public core crate. Lines are
+counted once per source line: LLVM reports generic and duplicate build
+instantiations separately, and summing the raw per-file summaries would count
+the same source line several times. With ``--branch``, the critical modules
+must have 100% branch coverage.
 """
 
 from __future__ import annotations
@@ -42,6 +45,27 @@ def totals(files: list[dict], key: str) -> tuple[int, int]:
     return count, covered
 
 
+def unique_line_totals(files: list[dict]) -> tuple[int, int]:
+    """Count each instrumented source line once across all instantiations."""
+    count = 0
+    covered = 0
+    for file in files:
+        segments = file.get("segments")
+        if not segments:
+            summary = file["summary"]["lines"]
+            count += summary["count"] or 0
+            covered += summary["covered"] or 0
+            continue
+        lines: dict[int, int] = {}
+        for segment in segments:
+            line, _, segment_count, has_count = segment[:4]
+            if has_count:
+                lines[line] = max(lines.get(line, 0), segment_count)
+        count += len(lines)
+        covered += sum(1 for value in lines.values() if value > 0)
+    return count, covered
+
+
 def percent(covered: int, count: int) -> float:
     return 100.0 if count == 0 else covered * 100.0 / count
 
@@ -63,7 +87,7 @@ def main() -> int:
 
     for package, prefix in PACKAGE_PREFIXES.items():
         selected = [file for file in files if prefix in normalized(file["filename"])]
-        count, covered = totals(selected, "lines")
+        count, covered = unique_line_totals(selected)
         if count == 0:
             print(f"{package}: no line data, skipped")
             continue

@@ -19,7 +19,7 @@ use core_domain::{
     TransactionFields, TransactionId, TransactionKind, TransactionNotePreset,
     TransactionNotePresetId, TransactionNotePresetRepository, TransactionRepository,
 };
-use core_persistence::SqliteLedger;
+use core_persistence::{SCHEMA_VERSION, SqliteLedger};
 use jiff::Timestamp;
 use uuid::Uuid;
 
@@ -199,13 +199,16 @@ fn database_is_encrypted_reopens_and_rejects_wrong_keys() {
     let path = temp_path("encryption");
     {
         let ledger = SqliteLedger::open(&path, KEY).unwrap();
-        assert_eq!(ledger.database().schema_version().unwrap(), 1);
+        assert_eq!(ledger.database().schema_version().unwrap(), SCHEMA_VERSION);
     }
     let bytes = fs::read(&path).unwrap();
     assert!(!bytes.starts_with(b"SQLite format 3\0"));
 
     let reopened = SqliteLedger::open(&path, KEY).unwrap();
-    assert_eq!(reopened.database().schema_version().unwrap(), 1);
+    assert_eq!(
+        reopened.database().schema_version().unwrap(),
+        SCHEMA_VERSION
+    );
     assert!(SqliteLedger::open(&path, "wrong-key").is_err());
     let _ = fs::remove_file(path);
 }
@@ -418,4 +421,149 @@ fn repository_errors_are_reported_for_missing_rows() {
     );
     let error: RepositoryError = ledger.snapshot().unwrap_err();
     assert!(error.message().contains("not initialized"));
+}
+
+#[test]
+fn every_repository_read_covers_filters_and_missing_rows() {
+    let ledger = SqliteLedger::open_in_memory(KEY).unwrap();
+    let rate = core_domain::ExchangeRate::new(
+        ExchangeRateId::from_uuid(Uuid::from_u128(20)),
+        currency("CNY"),
+        currency("USD"),
+        core_domain::ExactRatio::new(3, 20).unwrap(),
+        timestamp(1_000),
+        ExchangeRateSource::Manual,
+        None,
+        timestamp(1_000),
+        timestamp(1_000),
+    )
+    .unwrap();
+    ledger.save_settings(&settings()).unwrap();
+    ledger.save_profile(&profile()).unwrap();
+    ledger.save_account_group(&account_group()).unwrap();
+    ledger.save_category_group(&category_group()).unwrap();
+    ledger.save_tag(&tag()).unwrap();
+    ledger.save_counterparty(&counterparty()).unwrap();
+    ledger
+        .save_reconciliation_flag(&reconciliation_flag())
+        .unwrap();
+    ledger.save_note_preset(&note_preset()).unwrap();
+    ledger.save_account(&account()).unwrap();
+    ledger.save_category(&category()).unwrap();
+    ledger.save_transaction(&transaction()).unwrap();
+    ledger.save_exchange_rate(&rate).unwrap();
+
+    assert_eq!(
+        ledger.account_group(account_group().id()).unwrap(),
+        Some(account_group())
+    );
+    assert_eq!(
+        ledger.category_group(category_group().id()).unwrap(),
+        Some(category_group())
+    );
+    assert_eq!(ledger.tag(tag().id()).unwrap(), Some(tag()));
+    assert_eq!(
+        ledger.counterparty(counterparty().id()).unwrap(),
+        Some(counterparty())
+    );
+    assert_eq!(
+        ledger
+            .reconciliation_flag(reconciliation_flag().id())
+            .unwrap(),
+        Some(reconciliation_flag())
+    );
+    assert_eq!(
+        ledger.note_preset(note_preset().id()).unwrap(),
+        Some(note_preset())
+    );
+    assert_eq!(ledger.account(account().id()).unwrap(), Some(account()));
+    assert_eq!(ledger.category(category().id()).unwrap(), Some(category()));
+    assert_eq!(
+        ledger.transaction(transaction().id()).unwrap(),
+        Some(transaction())
+    );
+
+    assert_eq!(ledger.account_groups(false).unwrap(), vec![account_group()]);
+    assert_eq!(ledger.account_groups(true).unwrap(), vec![account_group()]);
+    assert_eq!(
+        ledger.category_groups(false).unwrap(),
+        vec![category_group()]
+    );
+    assert_eq!(
+        ledger.category_groups(true).unwrap(),
+        vec![category_group()]
+    );
+    assert_eq!(ledger.tags(false).unwrap(), vec![tag()]);
+    assert_eq!(ledger.tags(true).unwrap(), vec![tag()]);
+    assert_eq!(ledger.counterparties(false).unwrap(), vec![counterparty()]);
+    assert_eq!(ledger.counterparties(true).unwrap(), vec![counterparty()]);
+    assert_eq!(
+        ledger.reconciliation_flags(false).unwrap(),
+        vec![reconciliation_flag()]
+    );
+    assert_eq!(
+        ledger.reconciliation_flags(true).unwrap(),
+        vec![reconciliation_flag()]
+    );
+    assert_eq!(ledger.note_presets(false).unwrap(), vec![note_preset()]);
+    assert_eq!(ledger.note_presets(true).unwrap(), vec![note_preset()]);
+    assert_eq!(ledger.accounts(false).unwrap(), vec![account()]);
+    assert_eq!(ledger.accounts(true).unwrap(), vec![account()]);
+    assert_eq!(ledger.categories(false).unwrap(), vec![category()]);
+    assert_eq!(ledger.categories(true).unwrap(), vec![category()]);
+    assert_eq!(ledger.transactions(false).unwrap(), vec![transaction()]);
+    assert_eq!(ledger.transactions(true).unwrap(), vec![transaction()]);
+    assert_eq!(ledger.exchange_rates(false).unwrap(), vec![rate.clone()]);
+    assert_eq!(ledger.exchange_rates(true).unwrap(), vec![rate]);
+
+    let missing = Uuid::from_u128(999);
+    assert!(
+        ledger
+            .account(AccountId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .account_group(AccountGroupId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .category(CategoryId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .category_group(CategoryGroupId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(ledger.tag(TagId::from_uuid(missing)).unwrap().is_none());
+    assert!(
+        ledger
+            .counterparty(CounterpartyId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .reconciliation_flag(ReconciliationFlagId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .note_preset(TransactionNotePresetId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        ledger
+            .transaction(TransactionId::from_uuid(missing))
+            .unwrap()
+            .is_none()
+    );
 }
