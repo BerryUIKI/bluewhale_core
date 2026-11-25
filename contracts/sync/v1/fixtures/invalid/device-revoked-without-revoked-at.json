@@ -1,0 +1,10 @@
+{
+  "device_id": "0199c0f0-0000-7000-8000-000000000004",
+  "name": "Old phone",
+  "platform": "android",
+  "signing_public_key": "EBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8",
+  "agreement_public_key": "MDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk8",
+  "status": "revoked",
+  "registered_at": "2026-11-18T08:00:00.000Z",
+  "revoked_at": null
+}

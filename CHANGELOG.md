@@ -28,6 +28,10 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Repository governance files: contribution guide, code of conduct, security policy, issue and pull-request templates, dependency update configuration, and editor configuration.
 - Documentation index and architecture decision record process.
 - Design review documents R1-R6 and the Phase 0 spike evidence.
+- Sync protocol v1 under `contracts/sync/v1`: a JSON Schema for the signed operation envelope and every unencrypted `/v1` request and response document, an OpenAPI 3.1 description of the HTTP API, and synthetic conformance fixtures with a SHA-256 manifest.
+- Protocol types in `core-sync`: `PROTOCOL_VERSION`, `PAYLOAD_VERSION`, batch and size limits, `OperationEnvelope` with v1 validation, the entity/operation matrix, and typed HTTP documents for authentication, devices, ledgers, push/pull/ack, snapshots, and errors.
+- A language-neutral contract checker, `scripts/check_contracts.py`, and a CI job that validate the contract schemas, fixture hashes and expectations, and the OpenAPI document after bundling its relative schema references.
+- Sync protocol reference in `docs/reference/sync-protocol.md`, covering versioning, encodings, envelope semantics, limits, the API surface, signature canonicalization, and conformance.
 
 ### Changed
 

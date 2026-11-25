@@ -1,0 +1,662 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BerryUIKI/bluewhale_core/contracts/sync/v1/sync.schema.json",
+  "title": "Bluewhale sync protocol v1",
+  "description": "Operation envelopes and HTTP documents for the Bluewhale sync protocol version 1. Identifiers and binary fields are lowercase canonical text and unpadded base64url. The server validates the envelope and API documents; encrypted payloads are never inspected by the server.",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "A lowercase canonical UUID."
+    },
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "A lowercase canonical UUID version 7, with the RFC 9562 variant."
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "A server timestamp: UTC RFC 3339 with exactly three fractional digits."
+    },
+    "clientTimestamp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Informational client time as UTC epoch milliseconds. The server never orders operations by this value."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "minLength": 3,
+      "maxLength": 320,
+      "description": "An email address. Format validation is enforced by the server; the schema records the annotation."
+    },
+    "opaqueToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "An opaque bearer or refresh token. Its internal format is not part of this contract."
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16}$",
+      "description": "The 12-byte AEAD nonce, unpadded base64url."
+    },
+    "ciphertext": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,1398102}$",
+      "description": "The encrypted payload, unpadded base64url. The decrypted payload schema is identified by payload_version."
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$",
+      "description": "The 64-byte Ed25519 signature over the RFC 8785 canonical JSON of this envelope with the signature field omitted, unpadded base64url."
+    },
+    "publicKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$",
+      "description": "A raw 32-byte Ed25519 or X25519 public key, unpadded base64url."
+    },
+    "keyEnvelopeBody": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,1024}$",
+      "description": "An opaque wrapped ledger data key. The server stores and returns it without interpretation."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "A lowercase hexadecimal SHA-256 digest."
+    },
+    "entityType": {
+      "type": "string",
+      "enum": [
+        "account",
+        "account_group",
+        "category",
+        "category_group",
+        "counterparty",
+        "exchange_rate",
+        "ledger_profile",
+        "ledger_settings",
+        "note_preset",
+        "reconciliation_flag",
+        "tag",
+        "transaction"
+      ]
+    },
+    "operationType": {
+      "type": "string",
+      "enum": [
+        "delete",
+        "profile_replace",
+        "rate_upsert",
+        "restore",
+        "settings_replace",
+        "upsert"
+      ]
+    },
+    "operationEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A signed, end-to-end encrypted operation. The signature covers the RFC 8785 canonical JSON of this object with the signature field omitted. Field order is part of the emitted shape.",
+      "required": [
+        "protocol_version",
+        "op_id",
+        "ledger_id",
+        "device_id",
+        "entity_type",
+        "entity_id",
+        "op_type",
+        "base_revision",
+        "client_timestamp",
+        "idempotency_key",
+        "key_version",
+        "nonce",
+        "ciphertext",
+        "payload_version",
+        "signature"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": 1,
+          "description": "The sync protocol version. A consumer rejects versions it does not support."
+        },
+        "op_id": {
+          "$ref": "#/$defs/uuidV7",
+          "description": "The operation identity, unique within the ledger."
+        },
+        "ledger_id": {
+          "$ref": "#/$defs/uuidV7",
+          "description": "The ledger identity, equal to the ledger settings record identifier."
+        },
+        "device_id": {
+          "$ref": "#/$defs/uuid",
+          "description": "The registered device that produced the operation."
+        },
+        "entity_type": { "$ref": "#/$defs/entityType" },
+        "entity_id": {
+          "$ref": "#/$defs/uuidV7",
+          "description": "The identity of the entity the operation mutates."
+        },
+        "op_type": { "$ref": "#/$defs/operationType" },
+        "base_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "The entity revision the edit was based on; 0 when the operation creates the entity."
+        },
+        "client_timestamp": { "$ref": "#/$defs/clientTimestamp" },
+        "idempotency_key": {
+          "$ref": "#/$defs/uuid",
+          "description": "A client-generated key reused on every retry; the server deduplicates by it."
+        },
+        "key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "The ledger data key version used to encrypt this payload."
+        },
+        "nonce": { "$ref": "#/$defs/nonce" },
+        "ciphertext": { "$ref": "#/$defs/ciphertext" },
+        "payload_version": {
+          "const": 1,
+          "description": "The version of the decrypted payload schema."
+        },
+        "signature": { "$ref": "#/$defs/signature" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "account_group" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "account" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "category_group" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "category" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "tag" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "counterparty" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "reconciliation_flag" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "note_preset" } }
+          },
+          "then": { "properties": { "op_type": { "const": "upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "transaction" } }
+          },
+          "then": {
+            "properties": {
+              "op_type": { "enum": ["upsert", "delete", "restore"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "exchange_rate" } }
+          },
+          "then": { "properties": { "op_type": { "const": "rate_upsert" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "ledger_settings" } }
+          },
+          "then": { "properties": { "op_type": { "const": "settings_replace" } } }
+        },
+        {
+          "if": {
+            "required": ["entity_type"],
+            "properties": { "entity_type": { "const": "ledger_profile" } }
+          },
+          "then": { "properties": { "op_type": { "const": "profile_replace" } } }
+        }
+      ]
+    },
+    "magicLinkRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["email"],
+      "properties": {
+        "email": { "$ref": "#/$defs/email" }
+      }
+    },
+    "verifyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token"],
+      "properties": {
+        "token": { "$ref": "#/$defs/opaqueToken" }
+      }
+    },
+    "accountSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["account_id", "email"],
+      "properties": {
+        "account_id": { "$ref": "#/$defs/uuid" },
+        "email": { "$ref": "#/$defs/email" }
+      }
+    },
+    "authSession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["access_token", "refresh_token", "expires_in", "account"],
+      "properties": {
+        "access_token": { "$ref": "#/$defs/opaqueToken" },
+        "refresh_token": { "$ref": "#/$defs/opaqueToken" },
+        "expires_in": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Access-token lifetime in seconds."
+        },
+        "account": { "$ref": "#/$defs/accountSummary" }
+      }
+    },
+    "refreshRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refresh_token"],
+      "properties": {
+        "refresh_token": { "$ref": "#/$defs/opaqueToken" }
+      }
+    },
+    "deviceRegistrationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "name",
+        "platform",
+        "signing_public_key",
+        "agreement_public_key"
+      ],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/uuid" },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "A user-visible device name. It is metadata, never financial data."
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["windows", "android"]
+        },
+        "signing_public_key": {
+          "$ref": "#/$defs/publicKey",
+          "description": "The device Ed25519 public key."
+        },
+        "agreement_public_key": {
+          "$ref": "#/$defs/publicKey",
+          "description": "The device X25519 public key."
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "name",
+        "platform",
+        "signing_public_key",
+        "agreement_public_key",
+        "status",
+        "registered_at",
+        "revoked_at"
+      ],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "platform": { "type": "string", "enum": ["windows", "android"] },
+        "signing_public_key": { "$ref": "#/$defs/publicKey" },
+        "agreement_public_key": { "$ref": "#/$defs/publicKey" },
+        "status": { "type": "string", "enum": ["active", "revoked"] },
+        "registered_at": { "$ref": "#/$defs/timestamp" },
+        "revoked_at": {
+          "anyOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["status"],
+            "properties": { "status": { "const": "active" } }
+          },
+          "then": { "properties": { "revoked_at": { "type": "null" } } }
+        },
+        {
+          "if": {
+            "required": ["status"],
+            "properties": { "status": { "const": "revoked" } }
+          },
+          "then": { "properties": { "revoked_at": { "$ref": "#/$defs/timestamp" } } }
+        }
+      ]
+    },
+    "deviceList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["devices"],
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/device" }
+        }
+      }
+    },
+    "keyEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id", "key_version", "body"],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/uuid" },
+        "key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "body": { "$ref": "#/$defs/keyEnvelopeBody" }
+      }
+    },
+    "ledgerRegistrationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledger_id", "key_envelopes"],
+      "properties": {
+        "ledger_id": { "$ref": "#/$defs/uuidV7" },
+        "key_envelopes": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The initial key envelopes. Every envelope carries the same key_version, the ledger's initial key version.",
+          "items": { "$ref": "#/$defs/keyEnvelope" }
+        }
+      }
+    },
+    "ledgerSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledger_id", "latest_key_version", "latest_seq"],
+      "properties": {
+        "ledger_id": { "$ref": "#/$defs/uuidV7" },
+        "latest_key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "latest_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "ledgerList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledgers"],
+      "properties": {
+        "ledgers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ledgerSummary" }
+        }
+      }
+    },
+    "ledgerKeyUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_version", "envelopes"],
+      "properties": {
+        "key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "envelopes": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The complete envelope set for key_version. Every envelope must carry that same key_version.",
+          "items": { "$ref": "#/$defs/keyEnvelope" }
+        }
+      }
+    },
+    "pushRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ops"],
+      "properties": {
+        "ops": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/operationEnvelope" }
+        }
+      }
+    },
+    "acceptedOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op_id", "seq"],
+      "properties": {
+        "op_id": { "$ref": "#/$defs/uuidV7" },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "pushResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted", "latest_seq"],
+      "properties": {
+        "accepted": {
+          "type": "array",
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/acceptedOperation" }
+        },
+        "latest_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "storedOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq", "received_at", "envelope"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "received_at": { "$ref": "#/$defs/timestamp" },
+        "envelope": { "$ref": "#/$defs/operationEnvelope" }
+      }
+    },
+    "pullResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ops", "latest_seq", "has_more"],
+      "properties": {
+        "ops": {
+          "type": "array",
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/storedOperation" }
+        },
+        "latest_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "has_more": { "type": "boolean" }
+      }
+    },
+    "ackRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "snapshotUploadRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq", "sha256", "size", "key_version"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "snapshotUploadResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "upload_url", "expires_at"],
+      "properties": {
+        "snapshot_id": { "$ref": "#/$defs/uuid" },
+        "upload_url": { "type": "string", "format": "uri", "minLength": 1 },
+        "expires_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "seq",
+        "sha256",
+        "size",
+        "key_version",
+        "created_at",
+        "download_url",
+        "expires_at"
+      ],
+      "properties": {
+        "snapshot_id": { "$ref": "#/$defs/uuid" },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "key_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "created_at": { "$ref": "#/$defs/timestamp" },
+        "download_url": { "type": "string", "format": "uri", "minLength": 1 },
+        "expires_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable", "details"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "conflict",
+            "device_revoked",
+            "forbidden",
+            "internal",
+            "invalid_request",
+            "not_found",
+            "payload_too_large",
+            "rate_limited",
+            "unauthorized",
+            "unsupported_protocol_version"
+          ],
+          "description": "A stable machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "A diagnostic message for logs and support. It is not localized."
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether the same request may be retried with backoff and the same idempotency key."
+        },
+        "details": {
+          "type": "object",
+          "description": "Optional structured context. Field names are stable per error code."
+        }
+      }
+    }
+  }
+}

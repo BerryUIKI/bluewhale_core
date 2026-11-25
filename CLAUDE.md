@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current status
 
-Pre-alpha. The design reviews R1-R6 are approved and the Phase 0 Rust + Tauri spike is complete, with observed Windows and Android evidence in `docs/clients/SPIKE_RESULTS.md`. Phase 1 core foundation is in progress: `core-domain`, `core-application`, `core-testkit`, and `core-persistence` have functional APIs and passing tests; `core-sync` and `core-crypto` are still skeletons. Local schema v1 is implemented in `core-persistence`. Nothing is published.
+Pre-alpha. The design reviews R1-R6 are approved and the Phase 0 Rust + Tauri spike is complete, with observed Windows and Android evidence in `docs/clients/SPIKE_RESULTS.md`. Phase 1 core foundation is implemented: `core-domain`, `core-application`, `core-testkit`, and `core-persistence` have functional APIs and passing tests, and local schema v1 and the versioned export are implemented. `core-sync` implements the sync protocol v1 contract in `contracts/sync/v1`; `core-crypto` is still a skeleton. Nothing is published.
 
 ## Purpose and release boundary
 

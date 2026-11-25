@@ -15,6 +15,8 @@ This document defines the approved synchronization protocol, key hierarchy, conf
 
 Decisions **D4.1–D4.10** are accepted as recommended. Approval authorizes R5 design, not implementation. The private Apple implementation is the behavioral reference for the domain model; it does not currently implement cross-platform synchronization, so this protocol is new.
 
+Revision note (2026-11-25): P2.1 publishes the version 1 contract in `contracts/sync/v1`. The envelope table below listed nine entity types; version 1 also carries `account_group`, `reconciliation_flag`, and `note_preset`, which are part of the approved R3 data model and must synchronize. Version 1 documents are closed objects, so a new field or enum value in an existing document requires a new protocol version; new endpoints remain additive within `/v1`. `docs/reference/sync-protocol.md` records the encodings, operation-type matrix, limits, signature canonicalization, and conformance procedure.
+
 ## 1. Goals and non-goals
 
 Goals:
@@ -95,7 +97,7 @@ Every operation is a signed JSON envelope:
 | `op_id` | UUIDv7, globally unique within the ledger |
 | `ledger_id` | UUIDv7 ledger identity |
 | `device_id` | Registered device identity |
-| `entity_type` | `account`, `category_group`, `category`, `tag`, `counterparty`, `transaction`, `exchange_rate`, `ledger_settings`, `ledger_profile` |
+| `entity_type` | `account`, `account_group`, `category_group`, `category`, `tag`, `counterparty`, `reconciliation_flag`, `note_preset`, `transaction`, `exchange_rate`, `ledger_settings`, `ledger_profile` |
 | `entity_id` | UUIDv7 entity identity |
 | `op_type` | `upsert`, `delete`, `restore`, `settings_replace`, `profile_replace`, `rate_upsert` |
 | `base_revision` | Entity revision the edit was based on |
@@ -112,10 +114,11 @@ Every operation is a signed JSON envelope:
 - **Server validation:** the server validates envelope shape, byte limits, device/ledger membership, signature, and idempotency. It cannot validate financial semantics because the payload is encrypted; semantic validation happens on the client before push and after pull.
 - **Limits (initial):** 1 MiB per operation, 500 operations per batch, 8 MiB per batch. Limits are configurable and versioned.
 - **Replay protection:** `op_id` is unique per ledger; the server rejects a conflicting duplicate. `idempotency_key` deduplicates client retries.
+- **Machine-readable contract:** `contracts/sync/v1/sync.schema.json` defines the envelope and every unencrypted API document; `contracts/sync/v1/fixtures/` holds conformance cases with a SHA-256 manifest. The operation-type matrix and signature canonicalization are in `docs/reference/sync-protocol.md`.
 
 ## 6. HTTP contract
 
-Base path: `/v1`. JSON over TLS 1.3. Errors use `{ "code", "message", "retryable", "details" }` with stable machine-readable codes.
+Base path: `/v1`. JSON over TLS 1.3. Errors use `{ "code", "message", "retryable", "details" }` with stable machine-readable codes. The OpenAPI 3.1 description is `contracts/sync/v1/openapi.yaml`; it references the JSON Schema in the same directory.
 
 ### Authentication
 

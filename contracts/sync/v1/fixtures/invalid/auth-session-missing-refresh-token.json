@@ -1,0 +1,8 @@
+{
+  "access_token": "synthetic-access-token",
+  "expires_in": 900,
+  "account": {
+    "account_id": "0199c0f0-0000-7000-8000-000000000003",
+    "email": "owner@example.invalid"
+  }
+}

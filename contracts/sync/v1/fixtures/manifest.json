@@ -1,0 +1,223 @@
+{
+  "manifest_version": 1,
+  "protocol_version": 1,
+  "schema": "sync.schema.json",
+  "cases": [
+    {
+      "file": "invalid/auth-session-missing-refresh-token.json",
+      "document": "authSession",
+      "valid": false,
+      "sha256": "3ce166ee7a20792a9f252783cd1168f887d105ab16d69671e13332f31ff1c65a"
+    },
+    {
+      "file": "invalid/device-revoked-without-revoked-at.json",
+      "document": "device",
+      "valid": false,
+      "sha256": "2d59aef3662e03ab7b8aa37851987fff2b5772c18f609975eb2742224167c01f"
+    },
+    {
+      "file": "invalid/error-unknown-code.json",
+      "document": "error",
+      "valid": false,
+      "sha256": "093d86bb1c0277131dd26a2b9c954dbdafe9a983b527037010ed660669bb2a1b"
+    },
+    {
+      "file": "invalid/ledger-registration-empty-envelopes.json",
+      "document": "ledgerRegistrationRequest",
+      "valid": false,
+      "sha256": "b9a28bc4717bfff5fb2739288fabf6d317dda18e9bb35a7796f9b1b91e00de59"
+    },
+    {
+      "file": "invalid/ledger-summary-zero-key-version.json",
+      "document": "ledgerSummary",
+      "valid": false,
+      "sha256": "80451ceed4bf41090b85dba361c7eb8298df7582d73ede0f81282ede17f9dd63"
+    },
+    {
+      "file": "invalid/operation-envelope-bad-signature.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "1701e48974564add16be3863a3c313e1ffcc59926e067342491c4ca49ca2d7d7"
+    },
+    {
+      "file": "invalid/operation-envelope-empty-ciphertext.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "be5ac309da43f1c4cc88cd71cd5438d42ac209436e25f84da527185c1cbb6bbe"
+    },
+    {
+      "file": "invalid/operation-envelope-non-v7-identifier.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "7978cf2929c3bbd36994328657f44531a534a7f3b35fa1a13e8e0da84cd1893b"
+    },
+    {
+      "file": "invalid/operation-envelope-operation-mismatch.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "ba48164485ff98588e8a92d70a86f5f7ad4432d6d7f3d87c7ef1d701bbadcbea"
+    },
+    {
+      "file": "invalid/operation-envelope-unknown-field.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "b2b4692eb312b219b7fe0a01d60aea5a98a76dc7cb44933446f2a42b4265170f"
+    },
+    {
+      "file": "invalid/operation-envelope-unsupported-version.json",
+      "document": "operationEnvelope",
+      "valid": false,
+      "sha256": "6f45477f594cc5c99b5dbc2122e99864269252ac84f3cd3cecdeac64524acd6e"
+    },
+    {
+      "file": "invalid/pull-response-negative-sequence.json",
+      "document": "pullResponse",
+      "valid": false,
+      "sha256": "63471c3a54db5960e2442da85b5d557e4d6a64887cc356f8dbcfbd3cef71bae0"
+    },
+    {
+      "file": "invalid/push-request-empty.json",
+      "document": "pushRequest",
+      "valid": false,
+      "sha256": "31adce51dd740cc4115e716456593eb7db28b5e540611d0de1366f72e1390ac8"
+    },
+    {
+      "file": "invalid/snapshot-upload-uppercase-hash.json",
+      "document": "snapshotUploadRequest",
+      "valid": false,
+      "sha256": "9b89e7cd7172b378a4d30bfec436fab2549c563a4cd7a14e4aa300ff11cf23f7"
+    },
+    {
+      "file": "valid/ack-request.json",
+      "document": "ackRequest",
+      "valid": true,
+      "sha256": "e8198ee9735d7af967367ac28ccfc1f944c4e9d444776a22d78a659376bb33c6"
+    },
+    {
+      "file": "valid/auth-session.json",
+      "document": "authSession",
+      "valid": true,
+      "sha256": "17e56b88554ec4615d82a3a1c3215702553e7bfae9753a93d1fceda0bce2779c"
+    },
+    {
+      "file": "valid/device-list.json",
+      "document": "deviceList",
+      "valid": true,
+      "sha256": "93c64d98bdda75c923e8a02fadc79931bedd2ff24a5056315e7186d871daaeea"
+    },
+    {
+      "file": "valid/device-registration-request.json",
+      "document": "deviceRegistrationRequest",
+      "valid": true,
+      "sha256": "7fc10ff9826f4899dfab930bb76bbe4e2491bdcb29c553c814818e847adf7a72"
+    },
+    {
+      "file": "valid/device.json",
+      "document": "device",
+      "valid": true,
+      "sha256": "1c3791bd8e7e07d64648b413a2c6c471e8b7cb9c028fa5f4f97e7a4245369810"
+    },
+    {
+      "file": "valid/error.json",
+      "document": "error",
+      "valid": true,
+      "sha256": "af8e5b58dc62289c83b50efff21958c75072e8b951bc898f7b259fdc7d7d1d51"
+    },
+    {
+      "file": "valid/ledger-key-update-request.json",
+      "document": "ledgerKeyUpdateRequest",
+      "valid": true,
+      "sha256": "937f41da8e99bdb31c41717c54901376e8c0f48e6b66a823cad285a4e5e9eb50"
+    },
+    {
+      "file": "valid/ledger-list.json",
+      "document": "ledgerList",
+      "valid": true,
+      "sha256": "e4cc0d1d8088c23f1ee5889d83f9e90c22121a183b668a152496d3f9c06bdaea"
+    },
+    {
+      "file": "valid/ledger-registration-request.json",
+      "document": "ledgerRegistrationRequest",
+      "valid": true,
+      "sha256": "7db91bd0e6b16d82dc1ba4c0b84a870e5e2fc35400c219021e4fbf709a05a365"
+    },
+    {
+      "file": "valid/ledger-summary.json",
+      "document": "ledgerSummary",
+      "valid": true,
+      "sha256": "8f7ca73eb9f9b16fdb88ad3772545f31f6f0a0175d405224337328dab62841d9"
+    },
+    {
+      "file": "valid/magic-link-request.json",
+      "document": "magicLinkRequest",
+      "valid": true,
+      "sha256": "0a6edbfe1610558635b51caed36e47873f6a7347508e2afdaf357f8c8cf4a49a"
+    },
+    {
+      "file": "valid/operation-envelope-delete.json",
+      "document": "operationEnvelope",
+      "valid": true,
+      "sha256": "86f797b356aa2c215d465a846b96cf122f7b6623f60e1bc7459a1551545662e2"
+    },
+    {
+      "file": "valid/operation-envelope-settings.json",
+      "document": "operationEnvelope",
+      "valid": true,
+      "sha256": "0154dcf9938457041b099369707bd3d0a349a8e5322fb3f32748ae14bbfc6eaa"
+    },
+    {
+      "file": "valid/operation-envelope.json",
+      "document": "operationEnvelope",
+      "valid": true,
+      "sha256": "f34bc1975a341fadc17e2677346de029c1da968e9ccda8e63c4280f02191e9e6"
+    },
+    {
+      "file": "valid/pull-response.json",
+      "document": "pullResponse",
+      "valid": true,
+      "sha256": "af07d9421cd09e9779494705efd8a890e3efa5f614b1569adcc7969b49bde5b9"
+    },
+    {
+      "file": "valid/push-request.json",
+      "document": "pushRequest",
+      "valid": true,
+      "sha256": "614e58834a32b77380b88e63bfe4e6a12fb2bc29434d37499da95679f7197089"
+    },
+    {
+      "file": "valid/push-response.json",
+      "document": "pushResponse",
+      "valid": true,
+      "sha256": "15184f12e3216444b98c782763645b77a227cef01dba8de87888f3de2f5421d7"
+    },
+    {
+      "file": "valid/refresh-request.json",
+      "document": "refreshRequest",
+      "valid": true,
+      "sha256": "60bf8bb0f9cf4b3ba3c29b1224978a4dd3f4a273691c3c7c579b8430683896ee"
+    },
+    {
+      "file": "valid/snapshot-upload-request.json",
+      "document": "snapshotUploadRequest",
+      "valid": true,
+      "sha256": "cf4691c18b7225bf55201ea9338433a566accc22c477c95495b57e8cbfa7b6c1"
+    },
+    {
+      "file": "valid/snapshot-upload-response.json",
+      "document": "snapshotUploadResponse",
+      "valid": true,
+      "sha256": "d8628542442686134382414585bbecbfcb2bc7d5a6ad5d0158acc126035905b2"
+    },
+    {
+      "file": "valid/snapshot.json",
+      "document": "snapshot",
+      "valid": true,
+      "sha256": "48579501e387e4197ff46f8e168044954719d39a1102ef819ce7ed9e1f53e03e"
+    },
+    {
+      "file": "valid/verify-request.json",
+      "document": "verifyRequest",
+      "valid": true,
+      "sha256": "a743ba6e9bdb165c9098e04ec1810cd1152e6136ee747bff519671c1700f32e1"
+    }
+  ]
+}

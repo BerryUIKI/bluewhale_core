@@ -1,0 +1,14 @@
+{
+  "ledgers": [
+    {
+      "ledger_id": "0199c0f0-0000-7000-8000-000000000001",
+      "latest_key_version": 2,
+      "latest_seq": 42
+    },
+    {
+      "ledger_id": "0199c0f0-0000-7000-8000-000000000005",
+      "latest_key_version": 1,
+      "latest_seq": 0
+    }
+  ]
+}

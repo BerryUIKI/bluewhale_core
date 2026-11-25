@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "op_id": "0199c0f0-0000-7000-8000-000000000014",
+  "ledger_id": "0199c0f0-0000-7000-8000-000000000001",
+  "device_id": "0199c0f0-0000-7000-8000-000000000002",
+  "entity_type": "ledger_settings",
+  "entity_id": "0199c0f0-0000-7000-8000-000000000001",
+  "op_type": "settings_replace",
+  "base_revision": 8,
+  "client_timestamp": 1795521600000,
+  "idempotency_key": "0199c0f0-0000-7000-8000-000000000015",
+  "key_version": 2,
+  "nonce": "GBkaGxwdHh8gISIj",
+  "ciphertext": "Ymx1ZXdoYWxlIHN5bnRoZXRpYyBzZXR0aW5ncw",
+  "payload_version": 1,
+  "signature": "AgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQQ"
+}

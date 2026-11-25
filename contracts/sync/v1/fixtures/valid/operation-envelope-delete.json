@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "op_id": "0199c0f0-0000-7000-8000-000000000012",
+  "ledger_id": "0199c0f0-0000-7000-8000-000000000001",
+  "device_id": "0199c0f0-0000-7000-8000-000000000002",
+  "entity_type": "transaction",
+  "entity_id": "0199c0f0-0000-7000-8000-000000000020",
+  "op_type": "delete",
+  "base_revision": 5,
+  "client_timestamp": 1795521600000,
+  "idempotency_key": "0199c0f0-0000-7000-8000-000000000013",
+  "key_version": 1,
+  "nonce": "DA0ODxAREhMUFRYX",
+  "ciphertext": "Ymx1ZXdoYWxlIHN5bnRoZXRpYyBkZWxldGlvbg",
+  "payload_version": 1,
+  "signature": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4_QA"
+}

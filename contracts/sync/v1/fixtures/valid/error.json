@@ -1,0 +1,8 @@
+{
+  "code": "rate_limited",
+  "message": "Too many requests; retry after the indicated delay.",
+  "retryable": true,
+  "details": {
+    "retry_after_seconds": 30
+  }
+}

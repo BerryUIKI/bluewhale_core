@@ -14,7 +14,7 @@ This document describes the target layout of the three repositories and what alr
 - **Release boundary = repository boundary.** Public core, public clients, and the private server are separate repositories with separate licenses and CI.
 - **One build system per repository.** Cargo for core and the client Rust code, pnpm for the web UI, Go modules for the server.
 - **Financial logic lives in the core.** UI components, Tauri commands, Kotlin plugins, and server handlers never implement money rules.
-- **Contracts are versioned and shared.** The local schema, sync protocol, and export format have explicit versions and fixtures in `bluewhale_core/contracts`; export v1 is implemented.
+- **Contracts are versioned and shared.** The local schema, sync protocol, and export format have explicit versions and fixtures in `bluewhale_core/contracts`; export v1 and sync v1 are implemented.
 - **Generated code is isolated and drift-checked.** IPC bindings, the Android Gradle project, sqlc output, and OpenAPI models have fixed locations and a CI check that regenerating produces no diff.
 - **Every repository is independently buildable.** Cross-repository dependencies are pinned; no repository relies on a sibling checkout being present.
 - **Open-source hygiene is part of the layout.** Contribution, security, conduct, changelog, issue and pull-request templates, CODEOWNERS, and dependency updates exist from the first commit.
@@ -53,6 +53,7 @@ bluewhale_core/
 │   ├── core-sync/                 # operation log, envelopes, cursors, conflicts
 │   ├── core-crypto/               # Argon2id, AEAD, key wrapping, test vectors
 │   └── core-testkit/              # fakes, fixtures, deterministic clocks
+├── contracts/                     # language-neutral export and sync JSON Schemas, OpenAPI, fixtures
 └── docs/
     ├── README.md                  # documentation index
     ├── adr/                       # ADR process and template
@@ -62,7 +63,6 @@ bluewhale_core/
 Planned next, in phase order:
 
 ```text
-├── contracts/                     # language-neutral sync/export JSON Schemas, OpenAPI, fixtures
 ├── xtask/                         # repository checks: layering, banned tokens, license copies
 ├── fuzz/                          # cargo-fuzz targets for money, rates, envelopes, export
 ├── tests/integration/             # cross-crate integration tests over real SQLite
@@ -188,7 +188,7 @@ The server pins the protocol version, not a core crate. Protocol fixtures are co
 | Android Gradle project | `bluewhale_clients/android/src-tauri/gen/android` | Yes | Wrapper validation; build outputs ignored |
 | sqlc code | `bluewhale_server/internal/store/postgres/sqlcgen` | Yes | `go generate` and fail on diff |
 | OpenAPI server models | `bluewhale_server/internal/httpapi/openapi` | Yes | `go generate` and fail on diff |
-| Protocol fixtures | `bluewhale_core/contracts/fixtures` | Yes | Manifest SHA-256 per case |
+| Protocol fixtures | `bluewhale_core/contracts/sync/v1/fixtures` | Yes | Manifest SHA-256 per case |
 
 Signing material is never committed: Windows code-signing certificates, Android keystores, and their passwords live only in release environments and the platform secret store.
 

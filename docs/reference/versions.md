@@ -6,9 +6,9 @@ This table records the version identity of each public contract. A change to any
 | --- | --- | --- | --- |
 | Public crates | `0.1.0` | Functional APIs, unpublished | Workspace `Cargo.toml` |
 | Local SQLite schema | `1` | Active since P1.6 | `core-persistence` migrations and `SCHEMA_VERSION` |
-| Sync protocol | `1` | Planned for P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
+| Sync protocol | `1` | Active since P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
 | Export schema | `1` | Active since P1.7 | `contracts/export/v1` and `EXPORT_VERSION` in `core-application` |
-| HTTP API | `/v1` | Planned for P2.4 | Server OpenAPI contract |
+| HTTP API | `/v1` | Contract published in P2.1; server implementation planned for P2.4 | `contracts/sync/v1/openapi.yaml` |
 | Rust | `1.97.1` | Active | `rust-toolchain.toml`; MSRV `1.97.1` |
 | Node / pnpm | `24.15.0` / `11.18.0` | Active for clients | `.node-version`, `package.json` |
 | Go | `1.25.5` | Active for the server | `go.mod` |

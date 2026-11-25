@@ -28,6 +28,8 @@ The exact feature commands are added with the features themselves. P1.6 ships SQ
 - Schema v1 has no predecessor, so there is no prior-version fixture yet. `crates/core-persistence/tests/roundtrip.rs` covers opening a keyed database, reopening it, rejecting a wrong key, reading the recorded schema version, and round-tripping every persisted entity.
 - A migration fixture for each prior schema version is added with the first post-v1 migration, and it must assert that active, archived, and soft-deleted rows are preserved.
 - Export contract tests live in the `core-application` export module: they validate `contracts/export/v1/fixture.json` and exporter output against the JSON Schema and round-trip through the Rust document types.
+- Sync protocol contract tests live in `crates/core-sync/tests/contract.rs`: they validate every fixture against `contracts/sync/v1/sync.schema.json`, verify the manifest SHA-256 values, round-trip every valid document through the `core-sync` types, and enforce the envelope rules in Rust.
+- `scripts/check_contracts.py` is the language-neutral check: it validates every contract schema, the fixture manifest and expectations, and the OpenAPI document after bundling its relative schema references. It requires `jsonschema`, `PyYAML`, and `openapi-spec-validator`.
 - `tests/integration` (planned) exercises use cases over a real temporary SQLCipher database and runs the sync convergence tests.
 - Crypto known-answer tests live in `crates/core-crypto/tests/vectors.rs` once the vectors are recorded in P1.0.
 

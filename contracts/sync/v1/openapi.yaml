@@ -1,0 +1,562 @@
+openapi: 3.1.0
+info:
+  title: Bluewhale sync API
+  version: 1.0.0
+  summary: End-to-end encrypted ledger synchronization.
+  description: |
+    The public HTTP contract for Bluewhale sync protocol version 1. The server
+    stores opaque encrypted operations and routing metadata; it never receives
+    ledger names, amounts, notes, categories, tags, or plaintext.
+
+    Requests and responses are JSON over TLS 1.3. Field names and enum values
+    are stable. A breaking change requires `/v2` or an explicitly negotiated
+    version; within `/v1` only additive changes are permitted.
+
+    Errors use the `error` document with a stable machine-readable `code`.
+    A retry reuses the same `op_id` and `idempotency_key`. Rate-limited
+    responses carry a standard `Retry-After` header.
+
+    The request and response shapes are defined once in
+    `sync.schema.json`; this document references them. Consumers that require
+    a single self-contained document can bundle the external references
+    without changing their meaning.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+tags:
+  - name: authentication
+    description: Account access. Ledger data keys are never sent to the server.
+  - name: devices
+    description: Device registration and revocation.
+  - name: ledgers
+    description: Ledger registration and key envelopes.
+  - name: sync
+    description: Operation push, pull, and acknowledgement.
+  - name: snapshots
+    description: Encrypted snapshot upload and download.
+security:
+  - bearerAuth: []
+paths:
+  /v1/auth/magic-link:
+    post:
+      tags: [authentication]
+      operationId: requestMagicLink
+      summary: Request an email magic link
+      description: |
+        Returns `202` for both known and unknown addresses so the response does
+        not reveal whether an account exists. Requesting a link does not
+        provide ledger access; data recovery still requires the user-held
+        recovery key.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/magicLinkRequest'
+      responses:
+        '202':
+          description: Accepted.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auth/verify:
+    post:
+      tags: [authentication]
+      operationId: verifyMagicLink
+      summary: Exchange a magic-link token for a session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/verifyRequest'
+      responses:
+        '200':
+          description: An access token, a rotating refresh token, and the account summary.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/authSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auth/refresh:
+    post:
+      tags: [authentication]
+      operationId: refreshSession
+      summary: Rotate the session tokens
+      description: |
+        A refresh token is single-use. Reusing a rotated refresh token or
+        presenting an invalid signature revokes the session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/refreshRequest'
+      responses:
+        '200':
+          description: A new access token and a new rotating refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/authSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auth/logout:
+    post:
+      tags: [authentication]
+      operationId: logout
+      summary: Revoke the current session
+      responses:
+        '204':
+          description: The session is revoked.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/devices:
+    post:
+      tags: [devices]
+      operationId: registerDevice
+      summary: Register a device
+      description: |
+        Registers the device identity and its public keys. The private keys
+        never leave the device. Registration alone cannot read ledger data;
+        an existing unlocked device or the recovery key must also wrap the
+        ledger data keys for this device.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/deviceRegistrationRequest'
+      responses:
+        '201':
+          description: The registered device.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [devices]
+      operationId: listDevices
+      summary: List devices
+      responses:
+        '200':
+          description: Device metadata, including revoked devices. No financial data is returned.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/deviceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/devices/{device_id}:
+    delete:
+      tags: [devices]
+      operationId: revokeDevice
+      summary: Revoke a device
+      description: |
+        Marks the device revoked and rejects its tokens and operations. The
+        ledger rotates to a new data-key version for future operations.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '204':
+          description: The device is revoked.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers:
+    post:
+      tags: [ledgers]
+      operationId: registerLedger
+      summary: Register a client-generated ledger
+      description: |
+        Registers a client-generated ledger identity and its initial key
+        envelopes. The server stores the envelopes as opaque values. Every
+        envelope in the set carries the same initial `key_version`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/ledgerRegistrationRequest'
+      responses:
+        '201':
+          description: The registered ledger summary.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/ledgerSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [ledgers]
+      operationId: listLedgers
+      summary: List ledgers
+      responses:
+        '200':
+          description: Ledger identifiers, latest key versions, and latest sequences. No display names or financial data.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/ledgerList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/keys:
+    put:
+      tags: [ledgers]
+      operationId: updateLedgerKeys
+      summary: Replace the key envelopes for a key version
+      description: |
+        Replaces the complete set of device key envelopes for `key_version`.
+        Every envelope must carry the request's `key_version`. A version greater
+        than the current latest appends a new key version; the same version
+        replaces its envelope set; a lower version is rejected.
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/ledgerKeyUpdateRequest'
+      responses:
+        '200':
+          description: The updated ledger summary.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/ledgerSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/ops:
+    post:
+      tags: [sync]
+      operationId: pushOperations
+      summary: Push a batch of operations
+      description: |
+        The batch is atomic. A duplicate `op_id` is not appended again; its
+        existing sequence is returned in `accepted`. At most 500 operations and
+        8 MiB per request are accepted; one operation is at most 1 MiB.
+        Operations are appended in request order and assigned consecutive
+        per-ledger sequences.
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/pushRequest'
+      responses:
+        '200':
+          description: The accepted operations and the ledger's latest sequence.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/pushResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [sync]
+      operationId: pullOperations
+      summary: Pull operations after a sequence
+      description: |
+        Returns operations in ascending `seq` order. Delivery is at-least-once.
+        Applying an operation is idempotent by `op_id` and revision. The server
+        does not require an acknowledgement before returning later operations.
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+        - name: after_seq
+          in: query
+          required: false
+          description: Return operations with a sequence greater than this value.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 9223372036854775807
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of operations to return.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: The ordered operations and whether more are available.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/pullResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/ack:
+    post:
+      tags: [sync]
+      operationId: acknowledgeOperations
+      summary: Store the device's applied sequence
+      description: |
+        Records the per-device cursor. Acknowledging an earlier sequence is
+        harmless; the stored cursor never moves backwards.
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/ackRequest'
+      responses:
+        '204':
+          description: The cursor is stored.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/snapshots:
+    post:
+      tags: [snapshots]
+      operationId: createSnapshot
+      summary: Reserve a snapshot upload
+      description: |
+        Records the snapshot metadata and returns a short-lived upload URL.
+        The client uploads the encrypted snapshot directly to object storage;
+        the server never receives plaintext or a decryption key.
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './sync.schema.json#/$defs/snapshotUploadRequest'
+      responses:
+        '201':
+          description: The snapshot metadata and upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/snapshotUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/snapshots/latest:
+    get:
+      tags: [snapshots]
+      operationId: getLatestSnapshot
+      summary: Get the latest snapshot metadata
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+      responses:
+        '200':
+          description: The latest snapshot metadata and a download URL.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/snapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/ledgers/{ledger_id}/snapshots/{snapshot_id}:
+    get:
+      tags: [snapshots]
+      operationId: getSnapshot
+      summary: Get snapshot metadata
+      parameters:
+        - $ref: '#/components/parameters/LedgerId'
+        - $ref: '#/components/parameters/SnapshotId'
+      responses:
+        '200':
+          description: The snapshot metadata and a download URL.
+          content:
+            application/json:
+              schema:
+                $ref: './sync.schema.json#/$defs/snapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: A short-lived access token from `/v1/auth/verify` or `/v1/auth/refresh`.
+  parameters:
+    LedgerId:
+      name: ledger_id
+      in: path
+      required: true
+      description: The ledger identity.
+      schema:
+        $ref: './sync.schema.json#/$defs/uuidV7'
+    DeviceId:
+      name: device_id
+      in: path
+      required: true
+      description: The device identity.
+      schema:
+        $ref: './sync.schema.json#/$defs/uuid'
+    SnapshotId:
+      name: snapshot_id
+      in: path
+      required: true
+      description: The snapshot identity.
+      schema:
+        $ref: './sync.schema.json#/$defs/uuid'
+  responses:
+    BadRequest:
+      description: The request is malformed, invalid, or uses an unsupported protocol version.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    Unauthorized:
+      description: The access token is missing, expired, or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    Forbidden:
+      description: The authenticated device or account may not perform this request.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    NotFound:
+      description: The addressed account, device, ledger, or snapshot does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    Conflict:
+      description: The request conflicts with the stored state, such as a duplicate identity or a key version.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    PayloadTooLarge:
+      description: The request exceeds the operation, batch, or snapshot size limit.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    TooManyRequests:
+      description: The request is rate limited. The `Retry-After` header carries the retry hint.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            minimum: 0
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'
+    InternalError:
+      description: The server failed to process the request.
+      content:
+        application/json:
+          schema:
+            $ref: './sync.schema.json#/$defs/error'

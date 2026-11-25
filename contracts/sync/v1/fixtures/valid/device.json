@@ -1,0 +1,10 @@
+{
+  "device_id": "0199c0f0-0000-7000-8000-000000000002",
+  "name": "Studio desktop",
+  "platform": "windows",
+  "signing_public_key": "EBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8",
+  "agreement_public_key": "MDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk8",
+  "status": "active",
+  "registered_at": "2026-11-20T09:00:00.000Z",
+  "revoked_at": null
+}
