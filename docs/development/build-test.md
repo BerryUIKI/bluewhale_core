@@ -54,3 +54,5 @@ python3 scripts/check_coverage.py coverage.json --branch
 ```
 
 The script enforces at least 80% line coverage for each of the six public crates (empty crates are skipped) and 100% branch coverage for money, currency-scale, transfer, balance, and month-boundary modules. On Windows, run it from the SQLCipher environment described above. The first run builds the workspace in `target/llvm-cov-target`; later runs are incremental. Measured figures and any residual branch exclusions are recorded in [COVERAGE.md](../quality/COVERAGE.md).
+
+Dependency-review probe: this line exists only to open a pull request after the repository dependency graph was enabled.
