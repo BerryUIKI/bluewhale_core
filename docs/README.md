@@ -19,6 +19,7 @@ This directory contains the product, architecture, domain, sync, client, quality
 | Quality | [VERIFICATION.md](quality/VERIFICATION.md) | Active |
 | Security | [SECURITY_REVIEW.md](security/SECURITY_REVIEW.md) | Active since P2.6 |
 | Plan | [DEVELOPMENT_PLAN.md](plan/DEVELOPMENT_PLAN.md) | Active |
+| Plan | [PHASE2_EXIT.md](plan/PHASE2_EXIT.md) | Complete |
 | Plan | [P1.0_APPLE_REUSE_ASSESSMENT.md](plan/P1.0_APPLE_REUSE_ASSESSMENT.md) | Approved |
 | Development | [setup.md](development/setup.md) | Active |
 | Development | [build-test.md](development/build-test.md) | Active |

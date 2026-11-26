@@ -104,12 +104,14 @@ this host.
 | `cargo test -p core-persistence --test roundtrip` | 10 passed, including the quoted-key test. |
 | `cargo test -p core-sync` | 17 + 6 + 8 + 5 + 2 passed, including the empty-ledger restore and foreign-ledger envelope tests. |
 | `gitleaks git .` (local one-off, gitleaks 8) | 57 commits scanned, no leaks found. |
+| Core CI on `main` (run 45744950406) | All jobs passed: Linux checks, Windows tests, dependency policy, contract checks, coverage gates, secret scan (10 s), SBOM (1 min 33 s). |
 
 ### Not verified in this environment
 
-- **CI jobs:** the workflow changes could not be executed locally; they first
-  run on the push that contains them. The secret-scan command itself was run
-  locally and found no leaks, but the GitHub Actions job is unverified.
+- **GitHub dependency review:** the repository does not populate a dependency
+  graph (the compare API returns 403 and GraphQL reports zero manifests), so
+  the dependency-review job was removed; `cargo deny check` runs on every push
+  and pull request instead.
 - **Dependency advisories:** `cargo deny check` used the advisory database
   available on 2026-11-26; a later disclosure is not covered by this record.
 

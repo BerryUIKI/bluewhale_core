@@ -128,6 +128,8 @@ Critical path: **P0 → P1 → P2 → P3 → P4 → P5**. P6 is not committed an
 
 **Goal:** end-to-end encrypted sync between two simulated clients and a Go server, with conflict records and restore.
 
+Exit recorded in [PHASE2_EXIT.md](PHASE2_EXIT.md) on 2026-11-26.
+
 ### Steps
 
 1. **P2.1 Protocol contract**
