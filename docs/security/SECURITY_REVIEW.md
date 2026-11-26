@@ -209,7 +209,9 @@ golangci-lint 2.15.0; cargo-cyclonedx 0.5.10; cyclonedx-gomod 1.12.0.
 CI additions: a history secret scan (`gitleaks`), a CycloneDX SBOM artifact,
 and, for the public repository, dependency review on pull requests. The SBOM
 and secret-scan jobs were configured but have not executed yet; this host cannot
-run GitHub Actions. Their first run is on the next push.
+run GitHub Actions. Their first run is on the next push. A local `gitleaks git`
+run over the full history of this repository and of the server repository found
+no leaks (57 and 8 commits).
 
 ## 9. Conclusion
 

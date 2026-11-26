@@ -103,11 +103,13 @@ this host.
 | `cargo cyclonedx --format json --spec-version 1.6` | One CycloneDX 1.6 SBOM per crate; generated for the check and not committed. |
 | `cargo test -p core-persistence --test roundtrip` | 10 passed, including the quoted-key test. |
 | `cargo test -p core-sync` | 17 + 6 + 8 + 5 + 2 passed, including the empty-ledger restore and foreign-ledger envelope tests. |
+| `gitleaks git .` (local one-off, gitleaks 8) | 57 commits scanned, no leaks found. |
 
 ### Not verified in this environment
 
-- **CI secret scan, SBOM, and dependency review jobs:** the workflow changes
-  could not be executed locally; they first run on the push that contains them.
+- **CI jobs:** the workflow changes could not be executed locally; they first
+  run on the push that contains them. The secret-scan command itself was run
+  locally and found no leaks, but the GitHub Actions job is unverified.
 - **Dependency advisories:** `cargo deny check` used the advisory database
   available on 2026-11-26; a later disclosure is not covered by this record.
 
