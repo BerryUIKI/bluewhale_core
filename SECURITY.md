@@ -1,5 +1,7 @@
 # Security Policy
 
+The threat model, the P2.6 review, and the current findings and residual risks are recorded in [docs/security/SECURITY_REVIEW.md](docs/security/SECURITY_REVIEW.md).
+
 ## Supported versions
 
 Bluewhale is pre-alpha. Only the `main` branch and the latest tagged pre-release receive security fixes. Older commits and forks are not supported.

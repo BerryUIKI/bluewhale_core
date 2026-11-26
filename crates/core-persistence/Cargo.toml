@@ -13,6 +13,7 @@ core-domain.workspace = true
 jiff = "1.0.2"
 rusqlite = { version = "0.43.0", features = ["backup", "bundled-sqlcipher-vendored-openssl"] }
 uuid = "1.29.3"
+zeroize = "1.8.1"
 
 [lints]
 workspace = true

@@ -249,11 +249,13 @@ the ledger identity, the local schema version, the covered server sequence, and
 every tracked entity revision. The blob format and associated data are in
 [crypto.md](crypto.md). `SyncEngine::create_snapshot` and
 `SyncEngine::restore_snapshot` implement creation and restore; the server-facing
-upload API is part of `/v1`. Restore is intended for a fresh database: the
-engine restores entities one by one, so a failed restore must discard and
-recreate the database rather than reuse a partial import. Snapshot creation
-requires a drained outbox, and the client must not run local writes while the
-export and revision set are captured.
+upload API is part of `/v1`. Restore requires an empty ledger: a zero cursor,
+an empty outbox, and no tracked entity revisions. Any other state is refused,
+because a non-empty store would keep its higher cursor and silently skip the
+operations in between. The engine restores entities one by one, so a failed
+restore must discard and recreate the database rather than reuse a partial
+import. Snapshot creation requires a drained outbox, and the client must not
+run local writes while the export and revision set are captured.
 
 ## Conformance
 

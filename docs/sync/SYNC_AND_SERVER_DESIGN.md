@@ -223,7 +223,7 @@ Adversaries and mitigations:
 | Supply chain | Pinned dependencies, license checks, signed builds, SBOM | Compromised build or dependency |
 | Lost credentials | Mandatory recovery key; tested restore flow | Lost passphrase and recovery key means permanent data loss |
 
-The server never receives plaintext ledger data, ledger display names, passphrases, UMK, LDKs, or recovery keys. Metadata minimization is a design requirement; payload padding is deferred.
+The server never receives plaintext ledger data, ledger display names, passphrases, UMK, LDKs, or recovery keys. Metadata minimization is a design requirement; payload padding is deferred. The P2.6 review, including the threat model, findings, and the residual risk register, is in [SECURITY_REVIEW.md](../security/SECURITY_REVIEW.md).
 
 ## 11. Decisions accepted at R4
 

@@ -3,6 +3,8 @@
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 
+use base64::Engine as _;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use core_application::{Clock, IdSource, decode_entity};
 use core_crypto::{DeviceSigningKey, DeviceVerifyingKey, KeyVersion, SymmetricKey};
 use core_domain::{
@@ -13,7 +15,8 @@ use core_domain::{
     TransactionKind, TransactionRepository,
 };
 use core_sync::{
-    AcceptedOperation, PullResponse, PushRequest, PushResponse, StoredOperation, SyncEngine,
+    AcceptedOperation, EntityType, OperationEnvelope, OperationType, PAYLOAD_VERSION,
+    PROTOCOL_VERSION, PullResponse, PushRequest, PushResponse, StoredOperation, SyncEngine,
     SyncError, SyncKeys, SyncTransport, SyncTransportError,
 };
 use core_testkit::InMemoryLedger;
@@ -534,18 +537,86 @@ fn a_snapshot_restores_and_pulls_later_operations() {
         assert_eq!(ledger_b.tag(second.id()).unwrap().unwrap(), second);
         assert_eq!(engine_b.cursor().unwrap(), 2);
 
+        // `ledger_b` now holds state, so restore checks run on a fresh store.
+        let target_ledger = InMemoryLedger::new();
+        let target_clock = TestClock::new(1_795_000_000_000);
+        let target_ids = TestIds::new(20_000);
+        let target_keys = keys_for(
+            v7(4),
+            2,
+            v7(3),
+            &DeviceSigningKey::from_seed([1; 32]).public_key(),
+        );
+        let target_engine =
+            SyncEngine::new(&target_ledger, target_keys, &target_clock, &target_ids).unwrap();
+
         let mut tampered = snapshot.bytes.clone();
         let last = tampered.len() - 1;
         tampered[last] ^= 1;
         assert!(
-            engine_b
+            target_engine
                 .restore_snapshot(&snapshot.metadata, &tampered, 2)
                 .is_err()
         );
         assert!(
-            engine_b
+            target_engine
                 .restore_snapshot(&snapshot.metadata, &snapshot.bytes, 3)
                 .is_err()
         );
+        assert!(matches!(
+            engine_b.restore_snapshot(&snapshot.metadata, &snapshot.bytes, 2),
+            Err(SyncError::Snapshot("restore requires an empty ledger"))
+        ));
+    });
+}
+
+#[test]
+fn an_operation_from_another_ledger_is_rejected() {
+    with_clients!(ledger_a, ledger_b, engine_a, engine_b, {
+        let server = FakeServer::new();
+        let food = tag(10, "Food");
+        engine_a
+            .record_local_change(&SyncEntity::Tag(food), SyncOperationType::Upsert)
+            .unwrap();
+        engine_a.sync(&server).unwrap();
+        engine_b.sync(&server).unwrap();
+        assert_eq!(engine_b.cursor().unwrap(), 1);
+
+        let signing = DeviceSigningKey::from_seed([1; 32]);
+        let mut envelope = OperationEnvelope {
+            protocol_version: PROTOCOL_VERSION,
+            op_id: v7(90),
+            ledger_id: v7(99),
+            device_id: v7(3),
+            entity_type: EntityType::Tag,
+            entity_id: v7(91),
+            op_type: OperationType::Upsert,
+            base_revision: 0,
+            client_timestamp: 1_795_000_000_000,
+            idempotency_key: v7(92),
+            key_version: 1,
+            nonce: "AAECAwQFBgcICQoL".to_string(),
+            ciphertext: "AAECAwQFBgcICQoL".to_string(),
+            payload_version: PAYLOAD_VERSION,
+            signature: String::new(),
+        };
+        envelope.signature =
+            URL_SAFE_NO_PAD.encode(signing.sign(&envelope.signing_bytes()).to_bytes());
+        server.operations.borrow_mut().push(StoredOperation {
+            seq: 2,
+            received_at: "2026-11-25T00:00:00.000Z".to_string(),
+            envelope,
+        });
+        server.latest_seq.set(2);
+
+        let error = engine_b.sync(&server).unwrap_err();
+        assert!(
+            matches!(
+                error,
+                SyncError::Protocol("operation belongs to another ledger")
+            ),
+            "error = {error:?}"
+        );
+        assert_eq!(engine_b.cursor().unwrap(), 1);
     });
 }

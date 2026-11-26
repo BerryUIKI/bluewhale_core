@@ -214,6 +214,23 @@ fn database_is_encrypted_reopens_and_rejects_wrong_keys() {
 }
 
 #[test]
+fn keys_with_quotes_are_escaped_and_reopen() {
+    let path = temp_path("quoted-key");
+    let key = "owner's \"ledger\" key's tail";
+    {
+        let ledger = SqliteLedger::open(&path, key).unwrap();
+        assert_eq!(ledger.database().schema_version().unwrap(), SCHEMA_VERSION);
+    }
+    let reopened = SqliteLedger::open(&path, key).unwrap();
+    assert_eq!(
+        reopened.database().schema_version().unwrap(),
+        SCHEMA_VERSION
+    );
+    assert!(SqliteLedger::open(&path, "owner's other key").is_err());
+    let _ = fs::remove_file(path);
+}
+
+#[test]
 fn settings_profile_and_account_round_trip() {
     let ledger = SqliteLedger::open_in_memory(KEY).unwrap();
     ledger.save_tag(&tag()).unwrap();

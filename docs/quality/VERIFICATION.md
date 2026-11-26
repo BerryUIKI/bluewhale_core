@@ -81,3 +81,33 @@ digests and all 36 fixtures; the Rust tests do the same from this repository.
 - **Full workspace test run:** see the `core-persistence` note above.
 - **Performance:** the suite is functional, not a benchmark; throughput and
   large-batch behavior are not measured.
+
+## P2.6 security review (2026-11-26)
+
+The review and its findings are in
+[docs/security/SECURITY_REVIEW.md](../security/SECURITY_REVIEW.md). This section
+records the commands behind its evidence.
+
+A portable Strawberry Perl 5.42.3 with the Visual Studio 2022 (MSVC 14.44)
+build environment was installed for this run, so the full workspace, including
+the vendored SQLCipher/OpenSSL build in `core-persistence`, builds and tests on
+this host.
+
+| Command | Result |
+| --- | --- |
+| `cargo test --workspace` | 209 passed, 0 failed, 1 ignored (the measured Argon2id timing test). |
+| `cargo clippy --workspace --all-targets -- -D warnings` | Clean. |
+| `cargo fmt --all --check` | Clean. |
+| `cargo deny check` | `advisories ok, bans ok, licenses ok, sources ok`. |
+| `python -I scripts/check_contracts.py` | `contracts ok: 2 schema(s), 1 manifest(s), 36 fixture(s)`. |
+| `cargo cyclonedx --format json --spec-version 1.6` | One CycloneDX 1.6 SBOM per crate; generated for the check and not committed. |
+| `cargo test -p core-persistence --test roundtrip` | 10 passed, including the quoted-key test. |
+| `cargo test -p core-sync` | 17 + 6 + 8 + 5 + 2 passed, including the empty-ledger restore and foreign-ledger envelope tests. |
+
+### Not verified in this environment
+
+- **CI secret scan, SBOM, and dependency review jobs:** the workflow changes
+  could not be executed locally; they first run on the push that contains them.
+- **Dependency advisories:** `cargo deny check` used the advisory database
+  available on 2026-11-26; a later disclosure is not covered by this record.
+

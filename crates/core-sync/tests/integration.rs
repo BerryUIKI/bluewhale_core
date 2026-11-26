@@ -970,20 +970,33 @@ fn a_snapshot_restores_a_fresh_client_and_catches_up() {
     assert_eq!(fresh.ledger.tag(second.id()).unwrap().unwrap(), second);
     assert_eq!(fresh.export(), world.exported(0));
 
-    // The snapshot is authenticated and schema-versioned.
+    // The snapshot is authenticated and schema-versioned. A separate empty
+    // device exercises the rejected restores.
+    let target = ClientState::new(3, 30_000);
     let mut tampered = snapshot.bytes.clone();
     let last = tampered.len() - 1;
     tampered[last] ^= 1;
     assert!(
-        fresh
+        target
             .engine(&world.verifying_keys)
             .restore_snapshot(&snapshot.metadata, &tampered, 2)
             .is_err()
     );
     assert!(
-        fresh
+        target
             .engine(&world.verifying_keys)
             .restore_snapshot(&snapshot.metadata, &snapshot.bytes, 3)
             .is_err()
     );
+
+    // A ledger that already holds state refuses the restore instead of
+    // rolling back entities and keeping its higher cursor.
+    let error = fresh
+        .engine(&world.verifying_keys)
+        .restore_snapshot(&snapshot.metadata, &snapshot.bytes, 2)
+        .expect_err("restoring into a non-empty ledger must fail");
+    assert!(matches!(
+        error,
+        SyncError::Snapshot("restore requires an empty ledger")
+    ));
 }

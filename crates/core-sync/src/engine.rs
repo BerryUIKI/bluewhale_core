@@ -645,6 +645,11 @@ impl<'a> SyncEngine<'a> {
     fn apply_remote(&self, stored: &crate::api::StoredOperation) -> Result<Applied, SyncError> {
         let envelope = &stored.envelope;
         envelope.validate()?;
+        if envelope.ledger_id != self.keys.ledger_id {
+            // The server scopes its log per ledger; a client that receives a
+            // foreign envelope is talking to a faulty or hostile server.
+            return Err(SyncError::Protocol("operation belongs to another ledger"));
+        }
         let verifying_key = self
             .keys
             .verifying_keys

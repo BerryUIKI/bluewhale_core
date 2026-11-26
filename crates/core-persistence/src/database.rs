@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use core_domain::RepositoryError;
 use rusqlite::Connection;
 use rusqlite::backup::Backup;
+use zeroize::Zeroizing;
 
 /// The current local schema version.
 pub const SCHEMA_VERSION: i64 = 2;
@@ -105,9 +106,21 @@ fn initialize(
 }
 
 fn apply_key(connection: &Connection, key: &str) -> Result<(), RepositoryError> {
-    let escaped = key.replace('\'', "''");
+    // SQLite does not accept a bound parameter for PRAGMA values, so the key
+    // is embedded as a SQL string literal with quotes doubled. The statement
+    // holds the key in memory; keep it in a zeroizing buffer so the copy is
+    // wiped when the statement is executed.
+    let mut statement = Zeroizing::new(String::with_capacity(key.len() + 16));
+    statement.push_str("PRAGMA key = '");
+    for character in key.chars() {
+        if character == '\'' {
+            statement.push('\'');
+        }
+        statement.push(character);
+    }
+    statement.push_str("';");
     connection
-        .execute_batch(&format!("PRAGMA key = '{escaped}';"))
+        .execute_batch(&statement)
         .map_err(to_repository_error)
 }
 

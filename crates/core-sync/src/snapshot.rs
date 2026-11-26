@@ -143,19 +143,29 @@ impl SyncEngine<'_> {
 
     /// Verifies, decrypts, and restores a snapshot into the local store.
     ///
-    /// The store should be empty or freshly initialized. The cursor is set to
-    /// the snapshot sequence after every entity is restored.
+    /// The store must be empty: a zero cursor, no pending outbox operations,
+    /// and no tracked entity revisions. Restoring into a non-empty ledger
+    /// would overwrite current entities while the cursor kept its higher
+    /// value, silently skipping every operation in between, so it is refused.
+    /// The cursor is set to the snapshot sequence after every entity is
+    /// restored.
     ///
     /// # Errors
     ///
-    /// Returns a [`SyncError`] for a hash, size, format, key, decryption,
-    /// payload, schema, ledger, or store failure.
+    /// Returns [`SyncError::Snapshot`] when the store is not empty or for a
+    /// hash, size, format, key, decryption, payload, schema, or ledger failure.
     pub fn restore_snapshot(
         &self,
         metadata: &SnapshotMetadata,
         bytes: &[u8],
         schema_version: u32,
     ) -> Result<u64, SyncError> {
+        if self.store().cursor()? != 0
+            || !self.store().pending_operations(1)?.is_empty()
+            || !self.store().entity_revisions()?.is_empty()
+        {
+            return Err(SyncError::Snapshot("restore requires an empty ledger"));
+        }
         if metadata.size != bytes.len() as u64 {
             return Err(SyncError::Snapshot("snapshot size mismatch"));
         }

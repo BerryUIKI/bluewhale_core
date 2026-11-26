@@ -12,6 +12,10 @@
 | Dependency policy | `cargo deny check` | Licenses, advisories, bans, and sources |
 | Packaging | `cargo package -p <crate> --no-verify --allow-dirty` | A crate can be packaged with its README, LICENSE, and NOTICE |
 
+## Security checks
+
+CI scans the full history with gitleaks, generates a CycloneDX SBOM for every crate (`cargo cyclonedx --format json --spec-version 1.6`) and uploads it as an artifact, and runs dependency review on pull requests. `cargo deny check` covers advisories, licenses, bans, and sources. The P2.6 review, threat model, and residual risks are in [SECURITY_REVIEW.md](../security/SECURITY_REVIEW.md).
+
 ## Feature sets
 
 The workspace never runs `--all-features`. Features that change the storage backend are mutually exclusive, so CI selects them explicitly:

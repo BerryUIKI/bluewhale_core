@@ -301,6 +301,7 @@ dependencies = [
  "jiff",
  "rusqlite",
  "uuid",
+ "zeroize",
 ]
 
 [[package]]
