@@ -21,7 +21,7 @@ P2.1-P2.6) against the criteria in
 | core | `cargo test --workspace` | 209 passed, 0 failed, 1 ignored (Argon2id timing). |
 | core | `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --all --check` | Clean. |
 | core | `cargo deny check` | advisories, bans, licenses, sources ok. |
-| core | Core CI on `main` (run 45744950406) | All jobs passed, including the secret scan and SBOM. |
+| core | Core CI on `main`, run 45745866579 for the exit commit `ef24d53` | All jobs passed, including the secret scan (6 s) and SBOM (1 min 14 s). |
 | server | `go test -count=1 ./...` against PostgreSQL 17.7 | All packages pass. |
 | server | `go vet ./...`, `gofmt -l .`, `golangci-lint run` | Clean; 0 issues. |
 | server | `govulncheck ./...` | No vulnerabilities found. |
