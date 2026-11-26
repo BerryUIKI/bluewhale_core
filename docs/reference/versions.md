@@ -4,7 +4,7 @@ This table records the version identity of each public contract. A change to any
 
 | Component | Current version | Status | Source of truth |
 | --- | --- | --- | --- |
-| Public crates | `0.1.0` | Functional APIs, unpublished | Workspace `Cargo.toml` |
+| Public crates | `0.1.0` | Functional APIs, unpublished; tagged `v0.1.0` for client integration | Workspace `Cargo.toml` |
 | Local SQLite schema | `2` | Active since P2.3 (v1 since P1.6) | `core-persistence` migrations and `SCHEMA_VERSION` |
 | Sync protocol | `1` | Active since P2.1 | `core-sync` `PROTOCOL_VERSION` and `contracts/sync/v1` |
 | Sync payload schema | `1` | Active since P2.3 | Export v1 entity objects and `core-application` `sync_payload` |
@@ -33,4 +33,10 @@ This table records the version identity of each public contract. A change to any
 | Clients | `vMAJOR.MINOR.PATCH` | After the core pin and application gates |
 | Server | `vMAJOR.MINOR.PATCH` | After the protocol pin and deployment gate |
 
-No tag has been created yet. The table is a design target, not a record of published artifacts.
+## Created tags
+
+| Tag | Commit | Date | Purpose |
+| --- | --- | --- | --- |
+| `v0.1.0` | `7e9cdef` | 2026-11-26 | First integration pin for `bluewhale_clients`, after the Phase 2 exit. Annotated; the crates are not published to crates.io. |
+
+Annotated tags are created on `main`; a tag must match the workspace version and the versions of all six crates. The release-identity table above defines the naming for future releases.

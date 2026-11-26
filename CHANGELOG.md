@@ -54,6 +54,7 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 ### Changed
 
 - Snapshot restore now requires a zero cursor, an empty outbox, and no tracked entity revisions, and reports `restore requires an empty ledger` otherwise.
+- The annotated tag `v0.1.0` marks the first integration pin for `bluewhale_clients`, recorded in `docs/reference/versions.md`; the crates remain unpublished.
 
 - The coverage gate now counts each instrumented source line once across generic and duplicate build instantiations. The 80% per-crate line threshold and 100% critical-module branch threshold are unchanged.
 - Repository status is pre-alpha. The Phase 0 spike is complete and Phase 2 (sync and server) is complete with the exit record in `docs/plan/PHASE2_EXIT.md`; no crate is published yet.
