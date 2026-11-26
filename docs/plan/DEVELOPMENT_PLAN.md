@@ -169,6 +169,7 @@ Exit recorded in [PHASE2_EXIT.md](PHASE2_EXIT.md) on 2026-11-26.
    - Implemented on 2026-11-26 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 2. **P3.2 Ledger setup and selector**
    - First-run setup, multiple ledgers, switching, unavailable-store recovery.
+   - Implemented on 2026-11-26 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 3. **P3.3 Master data**
    - Accounts, two-level categories, tags, counterparties, archive behavior.
 4. **P3.4 Transactions**
