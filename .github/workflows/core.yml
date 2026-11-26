@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -42,7 +42,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install cargo-deny
         uses: taiki-e/install-action@cargo-deny
       - name: Check licenses, advisories, bans, and sources
@@ -68,9 +68,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Install contract tooling
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -103,7 +103,7 @@ jobs:
           cargo +nightly llvm-cov --workspace --branch --json --output-path coverage.json
           python3 scripts/check_coverage.py coverage.json --branch
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: core-coverage
           path: coverage.json
@@ -114,11 +114,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Scan the history for secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -137,7 +137,7 @@ jobs:
       - name: Generate CycloneDX SBOMs
         run: cargo cyclonedx --format json --spec-version 1.6
       - name: Upload SBOMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: core-sbom
           path: crates/**/*.cdx.json
