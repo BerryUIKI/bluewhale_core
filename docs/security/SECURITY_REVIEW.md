@@ -213,7 +213,8 @@ run 45744950406: secret scan 10 s, SBOM 1 min 33 s). GitHub's dependency-review
 action runs on pull requests now that the repository's dependency graph was
 enabled on 2026-11-26; before that the compare API returned 403 and the GraphQL
 manifest count was zero, and the compare API now reports the changed
-dependencies of an open pull request. Secret scanning with push protection and
+dependencies of an open pull request. The restored job passed on a temporary
+probe pull request on the same date. Secret scanning with push protection and
 Dependabot alerts were enabled on the same date. `cargo deny check` runs on
 every push and pull request and covers advisories, licenses, bans, and sources.
 A local `gitleaks git` run over the full history of this repository and of the

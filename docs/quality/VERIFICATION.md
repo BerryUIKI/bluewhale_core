@@ -105,14 +105,10 @@ this host.
 | `cargo test -p core-sync` | 17 + 6 + 8 + 5 + 2 passed, including the empty-ledger restore and foreign-ledger envelope tests. |
 | `gitleaks git .` (local one-off, gitleaks 8) | 57 commits scanned, no leaks found. |
 | Core CI on `main` (run 45744950406) | All jobs passed: Linux checks, Windows tests, dependency policy, contract checks, coverage gates, secret scan (10 s), SBOM (1 min 33 s). |
+| Dependency review (probe pull request #10) | Passed in 5 s after the repository dependency graph was enabled; every other check on the probe also passed. |
 
 ### Not verified in this environment
 
-- **Dependency review on a pull request:** the repository dependency graph was
-  enabled on 2026-11-26; the compare API now returns changed dependencies and
-  the job is back in the workflow, but it has not yet run on a pull request at
-  the time of this record. `cargo deny check` runs on every push and pull
-  request regardless.
 - **Dependency advisories:** `cargo deny check` used the advisory database
   available on 2026-11-26; a later disclosure is not covered by this record.
 

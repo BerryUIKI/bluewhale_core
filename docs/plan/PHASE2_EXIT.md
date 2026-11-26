@@ -35,9 +35,10 @@ P2.1-P2.6) against the criteria in
   defect. Until it is resolved, the server pipeline (including `go test -race`)
   cannot run on GitHub, and the server's local evidence stands alone.
 - **GitHub-native security features** were enabled on 2026-11-26: the
-  dependency graph (so dependency review now runs on pull requests), secret
-  scanning with push protection, and Dependabot alerts. Dependabot security
-  updates remain off; enabling them is a repository settings action.
+  dependency graph (dependency review runs on pull requests and passed on a
+  probe pull request), secret scanning with push protection, and Dependabot
+  alerts. Dependabot security updates remain off; enabling them is a repository
+  settings action.
 
 ## Deferred beyond Phase 2
 
