@@ -22,5 +22,8 @@ The authoritative contract is [`contracts/sync/v1`](../../contracts/sync/v1):
 [`docs/reference/sync-protocol.md`](../../docs/reference/sync-protocol.md) and
 [`docs/reference/crypto.md`](../../docs/reference/crypto.md).
 
-The blocking HTTP transport and the client command wiring follow with the server
-integration; the domain payload codec lives in `core-application`.
+The blocking HTTP transport and the client command wiring follow with the client
+shell; the domain payload codec lives in `core-application`. The integration
+suite in `tests/integration.rs` runs two simulated clients over an in-memory
+server and validates every wire document they exchange against the published
+schema.

@@ -40,6 +40,8 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Sync payload v1 in `core-application`: the export v1 entity object for each entity type, with conversions from every domain aggregate and validation through the domain constructors.
 - Local schema v2 in `core-persistence`: `outbox_operations`, `sync_entity_state`, `sync_applied_operations`, `sync_cursor`, `sync_conflicts`, and `sync_state`, with a verified `<database>.backup-v1` copy before migrating an existing schema v1 database.
 - Two-client sync engine tests covering convergence, last-writer-wins without conflicts, financial conflict preservation and resolution, deletion and restore, offline retry, and snapshot restore followed by pull; SQLCipher sync-store and v1-to-v2 migration tests.
+- P2.5 integration suite in `core-sync/tests/integration.rs`: two simulated clients driven by a seeded deterministic operation script over an in-memory server that validates every envelope, assigns per-ledger sequences, deduplicates by operation and idempotency key, and serves ordered pages. It covers six rounds of interleaved local edits with convergence of the export and every entity revision, a lost push response retried without duplication, concurrent-edit and delete-versus-edit conflicts preserved for review and resolved both ways, and snapshot restore on a fresh device followed by catch-up. Every push and pull document the clients exchange is validated against `contracts/sync/v1/sync.schema.json`.
+- Verification record in `docs/quality/VERIFICATION.md`, starting with the P2.5 environment, commands, observed results, and what this host could not run.
 
 ### Changed
 

@@ -19,7 +19,9 @@ cursors, and snapshots against a transport port. It does not define:
   `core-crypto` and documented in [crypto.md](crypto.md);
 - server implementation and deployment, which land in P2.4;
 - the HTTP transport adapter and client command wiring, which follow with the
-  server integration (P2.5) and the client shell (P3.1).
+  client shell (P3.1). The P2.5 integration suite exercises two simulated
+  clients over an in-memory server and validates every document they exchange
+  against the published schema.
 
 The server never needs the payload shape: it validates the envelope, verifies
 the signature, assigns a sequence, and stores ciphertext and routing metadata.
@@ -274,10 +276,12 @@ python -I scripts/check_contracts.py
 
 The Rust tests validate every fixture against the schema, verify the manifest
 hashes, and round-trip every valid document through the `core-sync` types. The
-Python check is language-neutral: it validates the schemas, the manifest, the
-fixtures, and the OpenAPI document, and confirms that every object schema
-referenced by the API has a valid fixture. It needs `jsonschema`, `PyYAML`, and
-`openapi-spec-validator`.
+P2.5 integration suite applies the same schema to the push and pull documents
+the client actually emits and consumes during a two-client run, so conformance
+covers live traffic as well as fixtures. The Python check is language-neutral:
+it validates the schemas, the manifest, the fixtures, and the OpenAPI document,
+and confirms that every object schema referenced by the API has a valid
+fixture. It needs `jsonschema`, `PyYAML`, and `openapi-spec-validator`.
 
 `openapi.yaml` references `sync.schema.json` by relative path. A consumer that
 needs one self-contained file can bundle those references without changing

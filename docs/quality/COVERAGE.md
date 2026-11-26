@@ -1,6 +1,6 @@
 # Coverage
 
-Gate evidence for the core workspace. P1.8 recorded the initial floors; P2.1 added the sync protocol types, P2.2 the cryptographic primitives, and P2.3 the client sync engine and schema v2. Thresholds are unchanged: at least 80% line coverage for each public crate and 100% branch coverage for the critical domain modules.
+Gate evidence for the core workspace. P1.8 recorded the initial floors; P2.1 added the sync protocol types, P2.2 the cryptographic primitives, and P2.3 the client sync engine and schema v2. P2.5 added integration tests only and changed no production source, so the measured line and branch coverage is unchanged. Thresholds are unchanged: at least 80% line coverage for each public crate and 100% branch coverage for the critical domain modules.
 
 Line coverage is counted once per instrumented source line. LLVM reports generic monomorphizations and duplicate build instantiations separately; summing the raw per-file summaries counts one source line several times and understates real coverage. `scripts/check_coverage.py` computes the unique-line union from the export segments. The thresholds and the branch gate are unchanged.
 
@@ -8,7 +8,7 @@ Line coverage is counted once per instrumented source line. LLVM reports generic
 
 | Item | Value |
 | --- | --- |
-| Date | 2026-11-24 (P1.8); 2026-11-25 (P2.1-P2.3) |
+| Date | 2026-11-24 (P1.8); 2026-11-25 (P2.1-P2.3); 2026-11-26 (P2.5, tests only) |
 | Host | Windows 10 Pro 10.0.19045, `x86_64-pc-windows-msvc` |
 | Line-coverage toolchain | Rust 1.97.1 (the workspace toolchain) |
 | Branch-coverage toolchain | `rustc 1.102.0-nightly (20fe935d5 2026-11-23)` |
