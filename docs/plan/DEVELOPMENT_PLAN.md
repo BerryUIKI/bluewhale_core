@@ -166,6 +166,7 @@ Exit recorded in [PHASE2_EXIT.md](PHASE2_EXIT.md) on 2026-11-26.
 
 1. **P3.1 Shell and IPC**
    - Tauri 2 project, React + TypeScript UI, generated IPC types, design tokens, routing, error handling.
+   - Implemented on 2026-11-26 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 2. **P3.2 Ledger setup and selector**
    - First-run setup, multiple ledgers, switching, unavailable-store recovery.
 3. **P3.3 Master data**
