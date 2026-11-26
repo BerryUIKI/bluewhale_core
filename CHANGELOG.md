@@ -43,7 +43,7 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - P2.5 integration suite in `core-sync/tests/integration.rs`: two simulated clients driven by a seeded deterministic operation script over an in-memory server that validates every envelope, assigns per-ledger sequences, deduplicates by operation and idempotency key, and serves ordered pages. It covers six rounds of interleaved local edits with convergence of the export and every entity revision, a lost push response retried without duplication, concurrent-edit and delete-versus-edit conflicts preserved for review and resolved both ways, and snapshot restore on a fresh device followed by catch-up. Every push and pull document the clients exchange is validated against `contracts/sync/v1/sync.schema.json`.
 - Verification record in `docs/quality/VERIFICATION.md`, starting with the P2.5 environment, commands, observed results, and what this host could not run.
 - Security review and threat model in `docs/security/SECURITY_REVIEW.md`, covering the key hierarchy, sync engine, local persistence, the client/server trust boundary, the adversary table, findings, and the residual risk register.
-- CI now scans the repository history for secrets with gitleaks and publishes a CycloneDX SBOM artifact per crate.
+- CI now scans the repository history for secrets with gitleaks, publishes a CycloneDX SBOM artifact per crate, and runs dependency review on pull requests; the repository's secret scanning, push protection, dependency graph, and Dependabot alerts were enabled.
 
 ### Security
 

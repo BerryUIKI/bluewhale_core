@@ -186,7 +186,7 @@ email addresses, bodies, ciphertext, or keys.
 | Per-instance rate limits | Simpler v1 deployment | Shared limiter at the edge or in the service |
 | Best-effort zeroization | No kernel-level attacker in the model | Platform secure-memory work in the client phase |
 | Snapshot reservation without upload | Self-inflicted availability only | Optional upload confirmation in a later protocol version |
-| GitHub-native security features are disabled for the repository | Repository settings are owner-controlled; the gitleaks job and `cargo deny` cover the pipeline | Enable the dependency graph, secret scanning with push protection, and Dependabot alerts |
+| Some GitHub-native toggles remain off | The dependency graph, secret scanning with push protection, and Dependabot alerts were enabled on 2026-11-26; gitleaks and `cargo deny` cover the pipeline | Enable Dependabot security updates and non-provider secret patterns if wanted |
 
 ## 8. Verification evidence
 
@@ -210,12 +210,14 @@ golangci-lint 2.15.0; cargo-cyclonedx 0.5.10; cyclonedx-gomod 1.12.0.
 CI additions: a history secret scan (`gitleaks`) and a CycloneDX SBOM artifact
 on every push and pull request. Both first ran on 2026-11-26 and passed (Core CI
 run 45744950406: secret scan 10 s, SBOM 1 min 33 s). GitHub's dependency-review
-action is not used: this repository's dependency graph is not populated (the
-compare API returns 403 and the GraphQL manifest count is 0), so the job would
-fail on every pull request. `cargo deny check` runs on every push and pull
-request and covers advisories, licenses, bans, and sources. A local `gitleaks
-git` run over the full history of this repository and of the server repository
-found no leaks (57 and 8 commits).
+action runs on pull requests now that the repository's dependency graph was
+enabled on 2026-11-26; before that the compare API returned 403 and the GraphQL
+manifest count was zero, and the compare API now reports the changed
+dependencies of an open pull request. Secret scanning with push protection and
+Dependabot alerts were enabled on the same date. `cargo deny check` runs on
+every push and pull request and covers advisories, licenses, bans, and sources.
+A local `gitleaks git` run over the full history of this repository and of the
+server repository found no leaks (57 and 8 commits).
 
 ## 9. Conclusion
 

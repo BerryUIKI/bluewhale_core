@@ -108,10 +108,11 @@ this host.
 
 ### Not verified in this environment
 
-- **GitHub dependency review:** the repository does not populate a dependency
-  graph (the compare API returns 403 and GraphQL reports zero manifests), so
-  the dependency-review job was removed; `cargo deny check` runs on every push
-  and pull request instead.
+- **Dependency review on a pull request:** the repository dependency graph was
+  enabled on 2026-11-26; the compare API now returns changed dependencies and
+  the job is back in the workflow, but it has not yet run on a pull request at
+  the time of this record. `cargo deny check` runs on every push and pull
+  request regardless.
 - **Dependency advisories:** `cargo deny check` used the advisory database
   available on 2026-11-26; a later disclosure is not covered by this record.
 

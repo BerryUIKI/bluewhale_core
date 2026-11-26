@@ -34,11 +34,10 @@ P2.1-P2.6) against the criteria in
   an account billing setting for private-repository Actions, not a repository
   defect. Until it is resolved, the server pipeline (including `go test -race`)
   cannot run on GitHub, and the server's local evidence stands alone.
-- **GitHub-native security features are disabled** for the public repository:
-  dependency graph, secret scanning with push protection, and Dependabot
-  alerts. The Gitleaks job, the CycloneDX SBOM artifact, and `cargo deny check`
-  cover the pipeline in the meantime. Enabling the features is a repository
-  settings action.
+- **GitHub-native security features** were enabled on 2026-11-26: the
+  dependency graph (so dependency review now runs on pull requests), secret
+  scanning with push protection, and Dependabot alerts. Dependabot security
+  updates remain off; enabling them is a repository settings action.
 
 ## Deferred beyond Phase 2
 

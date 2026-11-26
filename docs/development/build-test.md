@@ -14,7 +14,7 @@
 
 ## Security checks
 
-CI scans the full history with gitleaks, generates a CycloneDX SBOM for every crate (`cargo cyclonedx --format json --spec-version 1.6`) and uploads it as an artifact. `cargo deny check` covers advisories, licenses, bans, and sources on every push and pull request; GitHub's dependency-review action needs the repository dependency graph, which this repository does not populate. The P2.6 review, threat model, and residual risks are in [SECURITY_REVIEW.md](../security/SECURITY_REVIEW.md).
+CI scans the full history with gitleaks, generates a CycloneDX SBOM for every crate (`cargo cyclonedx --format json --spec-version 1.6`) and uploads it as an artifact. `cargo deny check` covers advisories, licenses, bans, and sources on every push and pull request, and dependency review runs on pull requests now that the repository dependency graph is enabled. The P2.6 review, threat model, and residual risks are in [SECURITY_REVIEW.md](../security/SECURITY_REVIEW.md).
 
 ## Feature sets
 
