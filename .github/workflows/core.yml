@@ -20,8 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.97.1
+        uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.97.1"
           components: rustfmt, clippy
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
@@ -43,7 +44,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.97.1
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.1"
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
       - name: Test
@@ -126,7 +129,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.97.1
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.1"
       - name: Install cargo-cyclonedx
         run: cargo install --locked cargo-cyclonedx --version 0.5.10
       - name: Generate CycloneDX SBOMs

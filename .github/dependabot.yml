@@ -20,5 +20,9 @@ updates:
       actions:
         patterns:
           - "*"
+    # The Rust version is pinned by the action's toolchain input, not by the
+    # action tag; a tag bump would install a nonexistent toolchain.
+    ignore:
+      - dependency-name: "dtolnay/rust-toolchain"
     labels:
       - dependencies
