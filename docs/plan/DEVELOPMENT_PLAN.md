@@ -172,6 +172,7 @@ Exit recorded in [PHASE2_EXIT.md](PHASE2_EXIT.md) on 2026-11-26.
    - Implemented on 2026-11-26 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 3. **P3.3 Master data**
    - Accounts, two-level categories, tags, counterparties, archive behavior.
+   - Implemented on 2026-11-27 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 4. **P3.4 Transactions**
    - Expense, income, transfers, opening balances, history, search/filter, edit, soft delete/restore, recovery view.
 5. **P3.5 Dashboard and reports**
