@@ -477,11 +477,15 @@ impl LedgerReadSnapshotRepository for InMemoryLedger {
             .cloned()
             .collect();
         let exchange_rates = inner.exchange_rates.values().cloned().collect();
+        let categories = inner.categories.values().cloned().collect();
+        let category_groups = inner.category_groups.values().cloned().collect();
         Ok(LedgerReadSnapshot {
             settings,
             active_accounts,
             active_transactions,
             exchange_rates,
+            categories,
+            category_groups,
         })
     }
 }

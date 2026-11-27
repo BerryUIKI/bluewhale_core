@@ -247,6 +247,10 @@ pub struct LedgerReadSnapshot {
     pub active_transactions: Vec<Transaction>,
     /// Exchange-rate revisions.
     pub exchange_rates: Vec<ExchangeRate>,
+    /// Categories, including archived ones, for report labels.
+    pub categories: Vec<Category>,
+    /// Category groups, including archived ones, for report labels.
+    pub category_groups: Vec<CategoryGroup>,
 }
 
 /// Reads a consistent snapshot of the ledger.

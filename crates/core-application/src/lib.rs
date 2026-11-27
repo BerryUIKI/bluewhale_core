@@ -13,6 +13,7 @@ pub mod filter;
 pub mod ledger;
 pub mod management;
 pub mod ports;
+pub mod reports;
 pub mod sync_payload;
 #[cfg(test)]
 mod test_support;
@@ -57,6 +58,7 @@ pub use management::{
     UpdateTransactionNotePresetUseCase,
 };
 pub use ports::{Clock, IdSource};
+pub use reports::{CategoryRankingReport, CategoryRankingRow, LoadCategoryRankingUseCase};
 pub use sync_payload::{SyncPayloadError, decode_entity, encode_entity, entities_from_document};
 pub use transactions::{
     CreateTransactionUseCase, ListTransactionsUseCase, SetTransactionDeletedUseCase,

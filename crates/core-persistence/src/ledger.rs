@@ -1539,11 +1539,15 @@ impl LedgerReadSnapshotRepository for SqliteLedger {
         let active_accounts = self.accounts(false)?;
         let active_transactions = self.transactions(false)?;
         let exchange_rates = self.exchange_rates(false)?;
+        let categories = self.categories(true)?;
+        let category_groups = self.category_groups(true)?;
         Ok(LedgerReadSnapshot {
             settings,
             active_accounts,
             active_transactions,
             exchange_rates,
+            categories,
+            category_groups,
         })
     }
 }

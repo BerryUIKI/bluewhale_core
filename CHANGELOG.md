@@ -44,6 +44,7 @@ All notable changes to the Bluewhale core are documented in this file. The proje
 - Verification record in `docs/quality/VERIFICATION.md`, starting with the P2.5 environment, commands, observed results, and what this host could not run.
 - Security review and threat model in `docs/security/SECURITY_REVIEW.md`, covering the key hierarchy, sync engine, local persistence, the client/server trust boundary, the adversary table, findings, and the residual risk register.
 - CI now scans the repository history for secrets with gitleaks, publishes a CycloneDX SBOM artifact per crate, and runs dependency review on pull requests; the repository's secret scanning, push protection, dependency graph, and Dependabot alerts were enabled.
+- Category ranking report in `core-application`: a ledger-month ranking of expense or income categories in the reporting currency, with category and group names, transaction counts, deterministic ordering, and explicit missing-rate errors. `LedgerReadSnapshot` now carries categories and category groups so reports can label historical records.
 
 ### Security
 
