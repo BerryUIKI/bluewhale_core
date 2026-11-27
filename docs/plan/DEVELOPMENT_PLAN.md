@@ -178,6 +178,7 @@ Exit recorded in [PHASE2_EXIT.md](PHASE2_EXIT.md) on 2026-11-26.
    - Implemented on 2026-11-27 in `bluewhale_clients`; evidence in its `docs/verification.md`.
 5. **P3.5 Dashboard and reports**
    - Balances, monthly totals, day detail, cash-flow summary, category ranking, missing-rate states.
+   - Implemented on 2026-11-27 in `bluewhale_clients`; evidence in its `docs/verification.md`. Adds `LoadCategoryRankingUseCase` to the core.
 6. **P3.6 Settings and localization**
    - Language, reporting currency, manual rates, ledger profile, sync settings.
    - English and Simplified Chinese; keyboard shortcuts; full accessibility pass.
